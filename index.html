@@ -87,9 +87,27 @@
   @media (max-width: 600px) {
     .dl-grid { grid-template-columns: 1fr; }
   }
+
+  .site-header {
+    display: flex; align-items: center; gap: 1rem;
+    margin-bottom: 1.2rem;
+  }
+  .site-header img { height: 64px; width: 64px; border-radius: 8px; }
+  .site-header a.main-site-link {
+    font-size: 0.9rem; color: var(--accent-dark); text-decoration: none;
+    border: 1px solid var(--border); border-radius: 6px; padding: 0.35rem 0.7rem;
+  }
+  .site-header a.main-site-link:hover { background: #f3faf4; border-color: var(--accent); }
 </style>
 </head>
 <body>
+
+<div class="site-header">
+  <img src="assets/logo.png" alt="Snapshot Brasil logo">
+  <a class="main-site-link" href="https://morettoleticia.github.io/Snapshot-Brasil/" target="_blank" rel="noopener">
+    Snapshot Brasil — main project site ↗
+  </a>
+</div>
 
 <div class="lang-toggle">
   <button id="btn-en" class="active" onclick="setLang('en')">English</button>
@@ -166,11 +184,34 @@
     </div>
   </section>
 
+  <section class="module">
+    <h2>Module 3 — Single-Species Occupancy <span class="status">ready</span></h2>
+    <p>Fitting a full occupancy model with an array random effect, community-wide
+       coefficients across 39 species, camera-level vs. array-level sensitivity
+       (6 species), a temperature x tree-cover interaction, an ecoregion
+       extension, and a Royle-Nichols abundance comparison. R script only (no
+       rendered report for this module).</p>
+    <div class="dl-grid">
+      <div class="dl-col">
+        <h4>English</h4>
+        <a class="dl-btn" href="modules/module3/en/module3_single_species_occupancy.R" download>
+          <span><span class="fmt">R</span> script</span><span class="size">24 KB &middot; download</span>
+        </a>
+      </div>
+      <div class="dl-col">
+        <h4>Português</h4>
+        <a class="dl-btn" href="modules/module3/pt/module3_single_species_occupancy_pt.R" download>
+          <span><span class="fmt">R</span> script</span><span class="size">26 KB &middot; baixar</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
   <section class="module" style="opacity:0.55;">
-    <h2>Modules 3&ndash;7 <span class="status pending">in progress</span></h2>
-    <p>Single-species occupancy, community &amp; joint models, prediction &amp;
-       mapping, species interactions, and temporal analysis. Posted once final
-       revisions are complete.</p>
+    <h2>Modules 4&ndash;7 <span class="status pending">in progress</span></h2>
+    <p>Community &amp; joint models, prediction &amp; mapping, species
+       interactions, and temporal analysis. Posted once final revisions are
+       complete.</p>
   </section>
 
   <div class="data-block">
@@ -265,11 +306,35 @@
     </div>
   </section>
 
+  <section class="module">
+    <h2>Módulo 3 — Ocupância de Espécie Única <span class="status">pronto</span></h2>
+    <p>Ajuste de um modelo completo de ocupância com efeito aleatório de array,
+       coeficientes em toda a comunidade para 39 espécies, sensibilidade
+       câmera-vs-array (6 espécies), uma interação temperatura x cobertura
+       arbórea, uma extensão por ecorregião, e uma comparação de abundância
+       Royle-Nichols. Apenas script R (sem relatório renderizado para este
+       módulo).</p>
+    <div class="dl-grid">
+      <div class="dl-col">
+        <h4>English</h4>
+        <a class="dl-btn" href="modules/module3/en/module3_single_species_occupancy.R" download>
+          <span><span class="fmt">R</span> script</span><span class="size">24 KB &middot; download</span>
+        </a>
+      </div>
+      <div class="dl-col">
+        <h4>Português</h4>
+        <a class="dl-btn" href="modules/module3/pt/module3_single_species_occupancy_pt.R" download>
+          <span><span class="fmt">R</span> script</span><span class="size">26 KB &middot; baixar</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
   <section class="module" style="opacity:0.55;">
-    <h2>Módulos 3&ndash;7 <span class="status pending">em andamento</span></h2>
-    <p>Ocupância de espécie única, modelos de comunidade e conjuntos, predição
-       e mapeamento, interações entre espécies, e análise temporal. Publicados
-       assim que as revisões finais estiverem completas.</p>
+    <h2>Módulos 4&ndash;7 <span class="status pending">em andamento</span></h2>
+    <p>Modelos de comunidade e conjuntos, predição e mapeamento, interações
+       entre espécies, e análise temporal. Publicados assim que as revisões
+       finais estiverem completas.</p>
   </section>
 
   <div class="data-block">
