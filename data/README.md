@@ -2,7 +2,7 @@
 
 Three files, all joined on `site_id` / `array_id`:
 
-## final_deployments.csv (1,205 rows)
+## final_deployments.csv (1,228 rows)
 One row per camera deployment (a camera running continuously at one location
 for one period). Columns: network (Snapshot / Atlantic / WI), array,
 placename, deployment_id, longitude, latitude, start_date, end_date,
@@ -41,9 +41,9 @@ removing redundant/collinear layers) is: forest_100m, savanna_100m,
 pasture_100m, cropland_100m, native_veg_1000m, temp_mean_C, precip_annual_mm.
 in_pa is tested as its own predictor, kept separate from this set.
 
-Not every site has covariates (1,125 of 1,205 deployment-table sites) -- a
-small number of sites lack a clean coordinate or fall just outside covariate
-raster coverage.
+Every site_id in final_covariates.csv has at least one matching row in
+final_deployments.csv (verified 1:1 site coverage — all 1,125 covariate
+sites join cleanly).
 
 ## Joining the three files
 

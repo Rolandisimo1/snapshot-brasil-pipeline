@@ -7,6 +7,7 @@
 <style>
   :root {
     --accent: #1b7837;
+    --accent-dark: #14602a;
     --bg: #ffffff;
     --text: #222;
     --muted: #666;
@@ -15,7 +16,7 @@
   body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     color: var(--text);
-    max-width: 900px;
+    max-width: 940px;
     margin: 0 auto;
     padding: 2rem 1.5rem 4rem;
     line-height: 1.55;
@@ -31,7 +32,7 @@
   section.module {
     border: 1px solid var(--border);
     border-radius: 10px;
-    padding: 1.2rem 1.5rem;
+    padding: 1.2rem 1.5rem 1.4rem;
     margin-bottom: 1.2rem;
   }
   section.module h2 { margin-top: 0; font-size: 1.25rem; }
@@ -47,23 +48,45 @@
     vertical-align: middle;
   }
   .status.pending { background: #f2f2f2; color: #888; }
-  .links { margin-top: 0.7rem; }
-  .links a {
-    display: inline-block;
-    margin: 0.15rem 0.6rem 0.15rem 0;
-    text-decoration: none;
-    color: var(--accent);
-    font-weight: 500;
+
+  /* Download/view grid: one column per language, two rows (HTML report / R script) */
+  .dl-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.9rem;
+    margin-top: 1rem;
   }
-  .links a:hover { text-decoration: underline; }
+  .dl-col { border: 1px solid var(--border); border-radius: 8px; padding: 0.8rem 0.9rem; }
+  .dl-col h4 {
+    margin: 0 0 0.6rem 0; font-size: 0.85rem; text-transform: uppercase;
+    letter-spacing: 0.04em; color: var(--muted);
+  }
+  .dl-btn {
+    display: flex; align-items: center; justify-content: space-between;
+    text-decoration: none; color: var(--text);
+    border: 1px solid var(--border); border-radius: 6px;
+    padding: 0.5rem 0.7rem; margin-bottom: 0.5rem; font-size: 0.92rem;
+    transition: background 0.12s, border-color 0.12s;
+  }
+  .dl-btn:last-child { margin-bottom: 0; }
+  .dl-btn:hover { background: #f3faf4; border-color: var(--accent); }
+  .dl-btn .fmt {
+    font-weight: 600; color: var(--accent-dark);
+  }
+  .dl-btn .size { color: var(--muted); font-size: 0.8rem; font-weight: 400; }
+
   .data-block {
     border: 1px dashed var(--border);
     border-radius: 10px;
     padding: 1.2rem 1.5rem;
     margin-top: 1.5rem;
   }
+  .data-block .dl-btn { max-width: 420px; }
   footer { margin-top: 3rem; color: var(--muted); font-size: 0.85rem; }
   .lang-block[hidden] { display: none; }
+  @media (max-width: 600px) {
+    .dl-grid { grid-template-columns: 1fr; }
+  }
 </style>
 </head>
 <body>
@@ -83,6 +106,9 @@
     environmental covariates, and species-level modeling, built on a merged
     dataset spanning three camera-trap networks (Snapshot Brasil, the Atlantic
     Forest camera-trap compilation, and public Wildlife Insights projects).
+    Every module is available in English and Portuguese, as a rendered report
+    (view in your browser) and as an annotated R script (download and run
+    yourself).
   </p>
 
   <section class="module">
@@ -90,9 +116,25 @@
     <p>Data structure (deployments, sequences, arrays), species/effort overview,
        camera trap-type and height, the independence-interval choice, and how a
        detection history is built.</p>
-    <div class="links">
-      <a href="modules/module1/en/module1_foundation_detection.html">Report (HTML)</a>
-      <a href="modules/module1/en/module1_foundation_detection.R">R script</a>
+    <div class="dl-grid">
+      <div class="dl-col">
+        <h4>English</h4>
+        <a class="dl-btn" href="modules/module1/en/module1_foundation_detection.html">
+          <span><span class="fmt">HTML</span> report</span><span class="size">2.2 MB &middot; view</span>
+        </a>
+        <a class="dl-btn" href="modules/module1/en/module1_foundation_detection.R" download>
+          <span><span class="fmt">R</span> script</span><span class="size">20 KB &middot; download</span>
+        </a>
+      </div>
+      <div class="dl-col">
+        <h4>Português</h4>
+        <a class="dl-btn" href="modules/module1/pt/module1_foundation_detection_pt.html">
+          <span><span class="fmt">HTML</span> relatório</span><span class="size">2.2 MB &middot; visualizar</span>
+        </a>
+        <a class="dl-btn" href="modules/module1/pt/module1_foundation_detection_pt.R" download>
+          <span><span class="fmt">R</span> script</span><span class="size">24 KB &middot; baixar</span>
+        </a>
+      </div>
     </div>
   </section>
 
@@ -102,9 +144,25 @@
        checks (correlation/PCA/VIF), within-array habitat homogeneity,
        protected-area coverage, and range-map evaluation for species-level
        modeling.</p>
-    <div class="links">
-      <a href="modules/module2/en/module2_covariates_sampling.html">Report (HTML)</a>
-      <a href="modules/module2/en/module2_covariates_sampling.R">R script</a>
+    <div class="dl-grid">
+      <div class="dl-col">
+        <h4>English</h4>
+        <a class="dl-btn" href="modules/module2/en/module2_covariates_sampling.html">
+          <span><span class="fmt">HTML</span> report</span><span class="size">5.8 MB &middot; view</span>
+        </a>
+        <a class="dl-btn" href="modules/module2/en/module2_covariates_sampling.R" download>
+          <span><span class="fmt">R</span> script</span><span class="size">32 KB &middot; download</span>
+        </a>
+      </div>
+      <div class="dl-col">
+        <h4>Português</h4>
+        <a class="dl-btn" href="modules/module2/pt/module2_covariates_sampling_pt.html">
+          <span><span class="fmt">HTML</span> relatório</span><span class="size">5.8 MB &middot; visualizar</span>
+        </a>
+        <a class="dl-btn" href="modules/module2/pt/module2_covariates_sampling_pt.R" download>
+          <span><span class="fmt">R</span> script</span><span class="size">32 KB &middot; baixar</span>
+        </a>
+      </div>
     </div>
   </section>
 
@@ -119,11 +177,13 @@
     <h2 style="margin-top:0;">Data</h2>
     <p>The final combined dataset (camera deployments, mammal detections, and
        remote-sensing covariates for every camera site) used throughout every
-       module:</p>
-    <div class="links">
-      <a href="data/snapshot_brasil_final_combined_data.zip">Download combined dataset (.zip)</a>
-      <a href="data/README.md">Data dictionary / README</a>
-    </div>
+       module — one file, both languages (data files are language-neutral):</p>
+    <a class="dl-btn" href="data/snapshot_brasil_final_combined_data.zip" download>
+      <span><span class="fmt">ZIP</span> combined dataset</span><span class="size">328 KB &middot; download</span>
+    </a>
+    <a class="dl-btn" href="data/README.md">
+      <span><span class="fmt">README</span> data dictionary</span><span class="size">view</span>
+    </a>
   </div>
 
   <footer>
@@ -142,7 +202,10 @@
     de dados, covariáveis ambientais e modelagem em nível de espécie,
     construído sobre um conjunto de dados combinado que abrange três redes de
     armadilhas fotográficas (Snapshot Brasil, a compilação de armadilhas da
-    Mata Atlântica, e projetos públicos do Wildlife Insights).
+    Mata Atlântica, e projetos públicos do Wildlife Insights). Cada módulo
+    está disponível em inglês e português, como um relatório renderizado
+    (visualize no navegador) e como um script R anotado (baixe e execute você
+    mesmo).
   </p>
 
   <section class="module">
@@ -151,9 +214,25 @@
        espécies/esforço amostral, tipo e altura de armadilha, a escolha do
        intervalo de independência, e como um histórico de detecção é
        construído.</p>
-    <div class="links">
-      <a href="modules/module1/pt/module1_foundation_detection_pt.html">Relatório (HTML)</a>
-      <a href="modules/module1/pt/module1_foundation_detection_pt.R">Script R</a>
+    <div class="dl-grid">
+      <div class="dl-col">
+        <h4>English</h4>
+        <a class="dl-btn" href="modules/module1/en/module1_foundation_detection.html">
+          <span><span class="fmt">HTML</span> report</span><span class="size">2.2 MB &middot; view</span>
+        </a>
+        <a class="dl-btn" href="modules/module1/en/module1_foundation_detection.R" download>
+          <span><span class="fmt">R</span> script</span><span class="size">20 KB &middot; download</span>
+        </a>
+      </div>
+      <div class="dl-col">
+        <h4>Português</h4>
+        <a class="dl-btn" href="modules/module1/pt/module1_foundation_detection_pt.html">
+          <span><span class="fmt">HTML</span> relatório</span><span class="size">2.2 MB &middot; visualizar</span>
+        </a>
+        <a class="dl-btn" href="modules/module1/pt/module1_foundation_detection_pt.R" download>
+          <span><span class="fmt">R</span> script</span><span class="size">24 KB &middot; baixar</span>
+        </a>
+      </div>
     </div>
   </section>
 
@@ -164,9 +243,25 @@
        homogeneidade de habitat dentro do array, cobertura de área protegida, e
        avaliação de mapas de distribuição para a modelagem em nível de
        espécie.</p>
-    <div class="links">
-      <a href="modules/module2/pt/module2_covariates_sampling_pt.html">Relatório (HTML)</a>
-      <a href="modules/module2/pt/module2_covariates_sampling_pt.R">Script R</a>
+    <div class="dl-grid">
+      <div class="dl-col">
+        <h4>English</h4>
+        <a class="dl-btn" href="modules/module2/en/module2_covariates_sampling.html">
+          <span><span class="fmt">HTML</span> report</span><span class="size">5.8 MB &middot; view</span>
+        </a>
+        <a class="dl-btn" href="modules/module2/en/module2_covariates_sampling.R" download>
+          <span><span class="fmt">R</span> script</span><span class="size">32 KB &middot; download</span>
+        </a>
+      </div>
+      <div class="dl-col">
+        <h4>Português</h4>
+        <a class="dl-btn" href="modules/module2/pt/module2_covariates_sampling_pt.html">
+          <span><span class="fmt">HTML</span> relatório</span><span class="size">5.8 MB &middot; visualizar</span>
+        </a>
+        <a class="dl-btn" href="modules/module2/pt/module2_covariates_sampling_pt.R" download>
+          <span><span class="fmt">R</span> script</span><span class="size">32 KB &middot; baixar</span>
+        </a>
+      </div>
     </div>
   </section>
 
@@ -181,11 +276,14 @@
     <h2 style="margin-top:0;">Dados</h2>
     <p>O conjunto de dados combinado final (implantações de câmera, detecções
        de mamíferos, e covariáveis de sensoriamento remoto para cada local de
-       câmera) usado em todos os módulos:</p>
-    <div class="links">
-      <a href="data/snapshot_brasil_final_combined_data.zip">Baixar conjunto de dados combinado (.zip)</a>
-      <a href="data/README.md">Dicionário de dados / README</a>
-    </div>
+       câmera) usado em todos os módulos — um único arquivo, ambos os idiomas
+       (arquivos de dados não têm idioma):</p>
+    <a class="dl-btn" href="data/snapshot_brasil_final_combined_data.zip" download>
+      <span><span class="fmt">ZIP</span> conjunto de dados combinado</span><span class="size">328 KB &middot; baixar</span>
+    </a>
+    <a class="dl-btn" href="data/README.md">
+      <span><span class="fmt">README</span> dicionário de dados</span><span class="size">visualizar</span>
+    </a>
   </div>
 
   <footer>
