@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Snapshot Brasil — Camera-Trap Analysis Pipeline</title>
+<style>
+  :root {
+    --accent: #1b7837;
+    --bg: #ffffff;
+    --text: #222;
+    --muted: #666;
+    --border: #e2e2e2;
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: var(--text);
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+    line-height: 1.55;
+  }
+  h1 { font-size: 1.9rem; margin-bottom: 0.2rem; }
+  .subtitle { color: var(--muted); margin-top: 0; margin-bottom: 1.5rem; }
+  .lang-toggle { margin-bottom: 2rem; }
+  .lang-toggle button {
+    background: none; border: 1px solid var(--border); border-radius: 6px;
+    padding: 0.4rem 0.9rem; margin-right: 0.5rem; cursor: pointer; font-size: 0.95rem;
+  }
+  .lang-toggle button.active { background: var(--accent); color: white; border-color: var(--accent); }
+  section.module {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.2rem 1.5rem;
+    margin-bottom: 1.2rem;
+  }
+  section.module h2 { margin-top: 0; font-size: 1.25rem; }
+  .status {
+    display: inline-block;
+    font-size: 0.75rem;
+    padding: 0.15rem 0.55rem;
+    border-radius: 999px;
+    background: #eaf5ec;
+    color: var(--accent);
+    font-weight: 600;
+    margin-left: 0.5rem;
+    vertical-align: middle;
+  }
+  .status.pending { background: #f2f2f2; color: #888; }
+  .links { margin-top: 0.7rem; }
+  .links a {
+    display: inline-block;
+    margin: 0.15rem 0.6rem 0.15rem 0;
+    text-decoration: none;
+    color: var(--accent);
+    font-weight: 500;
+  }
+  .links a:hover { text-decoration: underline; }
+  .data-block {
+    border: 1px dashed var(--border);
+    border-radius: 10px;
+    padding: 1.2rem 1.5rem;
+    margin-top: 1.5rem;
+  }
+  footer { margin-top: 3rem; color: var(--muted); font-size: 0.85rem; }
+  .lang-block[hidden] { display: none; }
+</style>
+</head>
+<body>
+
+<div class="lang-toggle">
+  <button id="btn-en" class="active" onclick="setLang('en')">English</button>
+  <button id="btn-pt" onclick="setLang('pt')">Português</button>
+</div>
+
+<div id="lang-en" class="lang-block">
+  <h1>Snapshot Brasil</h1>
+  <p class="subtitle">Camera-trap analysis pipeline — teaching modules, data, and code</p>
+
+  <p>
+    This site collects the analysis modules for the Snapshot Brasil camera-trap
+    network: a step-by-step workshop pipeline covering data structure,
+    environmental covariates, and species-level modeling, built on a merged
+    dataset spanning three camera-trap networks (Snapshot Brasil, the Atlantic
+    Forest camera-trap compilation, and public Wildlife Insights projects).
+  </p>
+
+  <section class="module">
+    <h2>Module 1 — Foundation &amp; Detection Histories <span class="status">ready</span></h2>
+    <p>Data structure (deployments, sequences, arrays), species/effort overview,
+       camera trap-type and height, the independence-interval choice, and how a
+       detection history is built.</p>
+    <div class="links">
+      <a href="modules/module1/en/module1_foundation_detection.html">Report (HTML)</a>
+      <a href="modules/module1/en/module1_foundation_detection.R">R script</a>
+    </div>
+  </section>
+
+  <section class="module">
+    <h2>Module 2 — Covariates, Sampling &amp; Protected Areas <span class="status">ready</span></h2>
+    <p>Why remote sensing is needed, the candidate covariate set, redundancy
+       checks (correlation/PCA/VIF), within-array habitat homogeneity,
+       protected-area coverage, and range-map evaluation for species-level
+       modeling.</p>
+    <div class="links">
+      <a href="modules/module2/en/module2_covariates_sampling.html">Report (HTML)</a>
+      <a href="modules/module2/en/module2_covariates_sampling.R">R script</a>
+    </div>
+  </section>
+
+  <section class="module" style="opacity:0.55;">
+    <h2>Modules 3&ndash;7 <span class="status pending">in progress</span></h2>
+    <p>Single-species occupancy, community &amp; joint models, prediction &amp;
+       mapping, species interactions, and temporal analysis. Posted once final
+       revisions are complete.</p>
+  </section>
+
+  <div class="data-block">
+    <h2 style="margin-top:0;">Data</h2>
+    <p>The final combined dataset (camera deployments, mammal detections, and
+       remote-sensing covariates for every camera site) used throughout every
+       module:</p>
+    <div class="links">
+      <a href="data/snapshot_brasil_final_combined_data.zip">Download combined dataset (.zip)</a>
+      <a href="data/README.md">Data dictionary / README</a>
+    </div>
+  </div>
+
+  <footer>
+    Snapshot Brasil workshop pipeline. Source and analysis code for every
+    module are included alongside the rendered reports above.
+  </footer>
+</div>
+
+<div id="lang-pt" class="lang-block" hidden>
+  <h1>Snapshot Brasil</h1>
+  <p class="subtitle">Pipeline de análise de armadilhas fotográficas — módulos didáticos, dados e código</p>
+
+  <p>
+    Este site reúne os módulos de análise da rede de armadilhas fotográficas
+    Snapshot Brasil: um pipeline de workshop passo a passo cobrindo estrutura
+    de dados, covariáveis ambientais e modelagem em nível de espécie,
+    construído sobre um conjunto de dados combinado que abrange três redes de
+    armadilhas fotográficas (Snapshot Brasil, a compilação de armadilhas da
+    Mata Atlântica, e projetos públicos do Wildlife Insights).
+  </p>
+
+  <section class="module">
+    <h2>Módulo 1 — Fundamentos e Históricos de Detecção <span class="status">pronto</span></h2>
+    <p>Estrutura de dados (implantações, sequências, arrays), visão geral de
+       espécies/esforço amostral, tipo e altura de armadilha, a escolha do
+       intervalo de independência, e como um histórico de detecção é
+       construído.</p>
+    <div class="links">
+      <a href="modules/module1/pt/module1_foundation_detection_pt.html">Relatório (HTML)</a>
+      <a href="modules/module1/pt/module1_foundation_detection_pt.R">Script R</a>
+    </div>
+  </section>
+
+  <section class="module">
+    <h2>Módulo 2 — Covariáveis, Amostragem e Áreas Protegidas <span class="status">pronto</span></h2>
+    <p>Por que o sensoriamento remoto é necessário, o conjunto candidato de
+       covariáveis, verificações de redundância (correlação/PCA/VIF),
+       homogeneidade de habitat dentro do array, cobertura de área protegida, e
+       avaliação de mapas de distribuição para a modelagem em nível de
+       espécie.</p>
+    <div class="links">
+      <a href="modules/module2/pt/module2_covariates_sampling_pt.html">Relatório (HTML)</a>
+      <a href="modules/module2/pt/module2_covariates_sampling_pt.R">Script R</a>
+    </div>
+  </section>
+
+  <section class="module" style="opacity:0.55;">
+    <h2>Módulos 3&ndash;7 <span class="status pending">em andamento</span></h2>
+    <p>Ocupância de espécie única, modelos de comunidade e conjuntos, predição
+       e mapeamento, interações entre espécies, e análise temporal. Publicados
+       assim que as revisões finais estiverem completas.</p>
+  </section>
+
+  <div class="data-block">
+    <h2 style="margin-top:0;">Dados</h2>
+    <p>O conjunto de dados combinado final (implantações de câmera, detecções
+       de mamíferos, e covariáveis de sensoriamento remoto para cada local de
+       câmera) usado em todos os módulos:</p>
+    <div class="links">
+      <a href="data/snapshot_brasil_final_combined_data.zip">Baixar conjunto de dados combinado (.zip)</a>
+      <a href="data/README.md">Dicionário de dados / README</a>
+    </div>
+  </div>
+
+  <footer>
+    Pipeline de workshop Snapshot Brasil. O código-fonte e de análise de cada
+    módulo está incluído junto aos relatórios renderizados acima.
+  </footer>
+</div>
+
+<script>
+function setLang(lang) {
+  document.getElementById('lang-en').hidden = (lang !== 'en');
+  document.getElementById('lang-pt').hidden = (lang !== 'pt');
+  document.getElementById('btn-en').classList.toggle('active', lang === 'en');
+  document.getElementById('btn-pt').classList.toggle('active', lang === 'pt');
+  localStorage.setItem('snapshot_brasil_lang', lang);
+}
+(function() {
+  var saved = localStorage.getItem('snapshot_brasil_lang');
+  if (saved) setLang(saved);
+})();
+</script>
+
+</body>
+</html>
