@@ -186,25 +186,52 @@
 
   <section class="module">
     <h2>Module 3 — Single-Species Occupancy <span class="status">ready</span></h2>
-    <p>Fitting a full occupancy model with an array random effect, community-wide
-       coefficients across 39 species, camera-level vs. array-level sensitivity
-       (6 species), a temperature x tree-cover interaction, an ecoregion
-       extension, and a Royle-Nichols abundance comparison. R script only (no
-       rendered report for this module).</p>
+    <p>A self-contained script that builds detection histories, applies
+       range-map site masking, and fits a full occupancy model with an array
+       random effect. Community-wide coefficients across 33 modeled
+       species/genera, a camera-level vs. array-level sensitivity check (6
+       species), a temperature &times; tree-cover interaction, an ecoregion
+       extension, and a Royle-Nichols abundance comparison, all rebuilt on the
+       refreshed 1,125-site candidate dataset. R script only (no rendered
+       report for this module) &mdash; run it to reproduce the 12 figures
+       shown below.</p>
     <div class="dl-grid">
       <div class="dl-col">
         <h4>English</h4>
         <a class="dl-btn" href="modules/module3/en/module3_single_species_occupancy.R" download>
-          <span><span class="fmt">R</span> script</span><span class="size">24 KB &middot; download</span>
+          <span><span class="fmt">R</span> script</span><span class="size">50 KB &middot; download</span>
+        </a>
+        <a class="dl-btn" href="modules/module3/en/module3_data.zip" download>
+          <span><span class="fmt">ZIP</span> input data</span><span class="size">337 KB &middot; download</span>
         </a>
       </div>
       <div class="dl-col">
         <h4>Português</h4>
         <a class="dl-btn" href="modules/module3/pt/module3_single_species_occupancy_pt.R" download>
-          <span><span class="fmt">R</span> script</span><span class="size">26 KB &middot; baixar</span>
+          <span><span class="fmt">R</span> script</span><span class="size">53 KB &middot; baixar</span>
+        </a>
+        <a class="dl-btn" href="modules/module3/pt/module3_data.zip" download>
+          <span><span class="fmt">ZIP</span> dados de entrada</span><span class="size">337 KB &middot; baixar</span>
         </a>
       </div>
     </div>
+    <details style="margin-top:1rem;">
+      <summary style="cursor:pointer; font-weight:600;">Figures produced by this script (12)</summary>
+      <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(220px,1fr)); gap:0.75rem; margin-top:0.75rem;">
+        <img src="modules/module3/en/figs/m3_dethist_armadillo.png" alt="Detection history" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module3/en/figs/m3_naive_vs_modeled.png" alt="Naive vs modeled occupancy" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module3/en/figs/m3_armadillo_effect_curves.png" alt="Armadillo effect curves" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module3/en/figs/m3_armadillo_beta_ci.png" alt="Armadillo coefficient CIs" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module3/en/figs/m3_auc_explainer.png" alt="AUC explainer" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module3/en/figs/m3_beta_shaded_table.png" alt="Community beta table" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module3/en/figs/m3_array_vs_site_6species.png" alt="Array vs camera coefficients" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module3/en/figs/m3_camera_vs_array_fit_6species.png" alt="Array vs camera AUC" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module3/en/figs/m3_species_pca_biplot.png" alt="Species PCA biplot" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module3/en/figs/m3_interaction_4species.png" alt="Temperature x tree-cover interaction" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module3/en/figs/m3_ecoregion_ocelot.png" alt="Ecoregion extension" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module3/en/figs/m3_occ_vs_abundance.png" alt="Occupancy vs Royle-Nichols abundance" loading="lazy" style="width:100%; border-radius:4px;">
+      </div>
+    </details>
   </section>
 
   <section class="module" style="opacity:0.55;">
@@ -307,27 +334,54 @@
   </section>
 
   <section class="module">
-    <h2>Módulo 3 — Ocupância de Espécie Única <span class="status">pronto</span></h2>
-    <p>Ajuste de um modelo completo de ocupância com efeito aleatório de array,
-       coeficientes em toda a comunidade para 39 espécies, sensibilidade
-       câmera-vs-array (6 espécies), uma interação temperatura x cobertura
-       arbórea, uma extensão por ecorregião, e uma comparação de abundância
-       Royle-Nichols. Apenas script R (sem relatório renderizado para este
-       módulo).</p>
+    <h2>Módulo 3 — Ocupação de Espécie Única <span class="status">pronto</span></h2>
+    <p>Um script autossuficiente que constrói históricos de detecção, aplica
+       o mascaramento de locais por mapa de distribuição, e ajusta um modelo
+       completo de ocupação com efeito aleatório de array. Coeficientes em
+       toda a comunidade para 33 espécies/gêneros modelados, uma checagem de
+       sensibilidade câmera-vs-array (6 espécies), uma interação temperatura
+       &times; cobertura arbórea, uma extensão por ecorregião, e uma
+       comparação de abundância Royle-Nichols, tudo reconstruído sobre o
+       conjunto de dados atualizado de 1.125 locais candidatos. Apenas
+       script R (sem relatório renderizado para este módulo) &mdash;
+       execute-o para reproduzir as 12 figuras mostradas abaixo.</p>
     <div class="dl-grid">
       <div class="dl-col">
         <h4>English</h4>
         <a class="dl-btn" href="modules/module3/en/module3_single_species_occupancy.R" download>
-          <span><span class="fmt">R</span> script</span><span class="size">24 KB &middot; download</span>
+          <span><span class="fmt">R</span> script</span><span class="size">50 KB &middot; download</span>
+        </a>
+        <a class="dl-btn" href="modules/module3/en/module3_data.zip" download>
+          <span><span class="fmt">ZIP</span> input data</span><span class="size">337 KB &middot; download</span>
         </a>
       </div>
       <div class="dl-col">
         <h4>Português</h4>
         <a class="dl-btn" href="modules/module3/pt/module3_single_species_occupancy_pt.R" download>
-          <span><span class="fmt">R</span> script</span><span class="size">26 KB &middot; baixar</span>
+          <span><span class="fmt">R</span> script</span><span class="size">53 KB &middot; baixar</span>
+        </a>
+        <a class="dl-btn" href="modules/module3/pt/module3_data.zip" download>
+          <span><span class="fmt">ZIP</span> dados de entrada</span><span class="size">337 KB &middot; baixar</span>
         </a>
       </div>
     </div>
+    <details style="margin-top:1rem;">
+      <summary style="cursor:pointer; font-weight:600;">Figuras produzidas por este script (12)</summary>
+      <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(220px,1fr)); gap:0.75rem; margin-top:0.75rem;">
+        <img src="modules/module3/pt/figs/m3_dethist_armadillo.png" alt="Histórico de detecção" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module3/pt/figs/m3_naive_vs_modeled.png" alt="Ocupação ingênua vs. modelada" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module3/pt/figs/m3_armadillo_effect_curves.png" alt="Curvas de efeito do Tatu-galinha" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module3/pt/figs/m3_armadillo_beta_ci.png" alt="Intervalos de credibilidade do Tatu-galinha" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module3/pt/figs/m3_auc_explainer.png" alt="Explicação do AUC" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module3/pt/figs/m3_beta_shaded_table.png" alt="Tabela de beta da comunidade" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module3/pt/figs/m3_array_vs_site_6species.png" alt="Coeficientes array vs. câmera" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module3/pt/figs/m3_camera_vs_array_fit_6species.png" alt="AUC array vs. câmera" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module3/pt/figs/m3_species_pca_biplot.png" alt="Biplot PCA de espécies" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module3/pt/figs/m3_interaction_4species.png" alt="Interação temperatura x cobertura arbórea" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module3/pt/figs/m3_ecoregion_ocelot.png" alt="Extensão por ecorregião" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module3/pt/figs/m3_occ_vs_abundance.png" alt="Ocupação vs. abundância Royle-Nichols" loading="lazy" style="width:100%; border-radius:4px;">
+      </div>
+    </details>
   </section>
 
   <section class="module" style="opacity:0.55;">
