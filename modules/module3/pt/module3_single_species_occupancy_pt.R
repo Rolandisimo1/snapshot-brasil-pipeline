@@ -7,7 +7,7 @@
 ## dados combinado (implantações, detecções de mamíferos, covariáveis de
 ## sensoriamento remoto) e constrói tudo do zero -- históricos de detecção,
 ## covariáveis, conjuntos de locais candidatos, e cada ajuste de modelo.
-## Coloque este script na mesma pasta que os sete arquivos de dados
+## Coloque este script na mesma pasta que os dez arquivos de dados
 ## listados abaixo e execute-o do início ao fim.
 ##
 ## Arquivos de entrada necessários (em DATA_DIR, padrão "data" junto a este script):
@@ -18,6 +18,9 @@
 ##   genus_species_site_exclusions.csv -- locais de zero estrutural para Didelphis agrupado (ver nota abaixo)
 ##   site_ecoregion.csv            -- bioma/ecorregião por local (usado apenas na extensão de ecorregião)
 ##   species_order_lookup.csv      -- ordem taxonômica por espécie/gênero (usado apenas na seção 3.1)
+##   species_common_names_pt.csv   -- nome comum em português por espécie/gênero (usado nos rótulos de PCA/RN)
+##   brazil_boundary.gpkg          -- contorno do Brasil (Natural Earth 110m; figura de níveis de Johnson)
+##   south_america_boundary.gpkg   -- contorno da América do Sul (Natural Earth 110m; inset localizador)
 ##
 ## Os últimos quatro arquivos são saídas de referência da avaliação de mapas
 ## de distribuição do Módulo 2 e da revisão taxonômica deste pipeline, e não
@@ -37,7 +40,7 @@
 ## congêneres tem mapa de distribuição, e usá-lo isoladamente marcaria
 ## muitas detecções reais como "impossíveis."
 ##
-## Requer: data.table, ggplot2, unmarked, spOccupancy, pROC.
+## Requer: data.table, ggplot2, unmarked, spOccupancy, pROC, ggrepel, sf.
 ## Se os rótulos das figuras contendo símbolos psi/beta/lambda aparecerem
 ## corrompidos, execute este script com um locale UTF-8 definido
 ## (ex.: LC_ALL=en_US.UTF-8).
@@ -721,6 +724,80 @@ cat("resultado no nível de array de uma espécie esparsa ou fortemente\n")
 cat("mascarada por distribuição deve ser tratado como um sinal muito mais\n")
 cat("fraco do que seu valor-p isoladamente sugere.\n\n")
 
+## ---- 2.2b Hierarquia de seleção de habitat de Johnson (1980), ilustrada ----
+## Construído nativamente a partir das coordenadas de local já carregadas
+## acima -- sem dependência de imagem externa. Requer o pacote `sf` (para os
+## contornos dos países) além dos pacotes listados no cabeçalho.
+cat("== Hierarquia de seleção de habitat de Johnson (1980) ==\n")
+suppressMessages(library(sf))
+brazil_sf <- st_read(file.path(DATA_DIR, "brazil_boundary.gpkg"), quiet=TRUE)
+sa_sf <- st_read(file.path(DATA_DIR, "south_america_boundary.gpkg"), quiet=TRUE)
+
+COL_AVAIL_J <- "#bbbbbb"; COL_USED_J <- "#2c2c2c"
+arr_centers_j <- sc[, .(lon=mean(longitude), lat=mean(latitude)), by=array_id]
+
+## um agrupamento de 4 arrays (~15-30km entre si, claramente separáveis)
+## usado nos painéis de segunda e terceira ordem
+cluster_arrays_j <- c("WI_WI_019","WI_WI_020","WI_WI_021","WI_WI_022")
+cluster_sites_j <- sc[array_id %in% cluster_arrays_j, .(site_id, array_id, longitude, latitude)]
+
+png(file.path(FIGS_DIR, "m3_johnson_levels_of_selection_pt.png"), width=15.5, height=6.2, units="in", res=170)
+par(mfrow=c(1,3), mar=c(1,1,3,1), oma=c(0,0,2,0))
+
+## Painel 1: seleção de primeira ordem -- distribuição geográfica
+plot(st_geometry(brazil_sf), col=COL_AVAIL_J, border="white", main="Seleção de primeira ordem", cex.main=1.3, font.main=2)
+points(arr_centers_j$lon, arr_centers_j$lat, pch=16, col=COL_USED_J, cex=0.7)
+mtext("Disponível: distribuição geográfica da espécie\nUsado: locais dos arrays de câmeras", side=1, line=-2, adj=0, cex=0.65)
+## inset localizador (América do Sul, Brasil destacado)
+usr <- par("usr")
+inset_w <- diff(usr[1:2])*0.32; inset_h <- diff(usr[3:4])*0.30
+inset_x0 <- usr[1] + diff(usr[1:2])*0.02; inset_y0 <- usr[3] + diff(usr[3:4])*0.62
+sa_bbox <- st_bbox(sa_sf)
+sa_scale_x <- inset_w / (sa_bbox["xmax"]-sa_bbox["xmin"])
+sa_scale_y <- inset_h / (sa_bbox["ymax"]-sa_bbox["ymin"])
+sa_geoms <- st_geometry(sa_sf) * matrix(c(sa_scale_x,0,0,sa_scale_y), 2,2)
+sa_geoms <- sa_geoms + c(inset_x0 - st_bbox(sa_geoms)["xmin"], inset_y0 - st_bbox(sa_geoms)["ymin"])
+plot(sa_geoms, col="#e0e0e0", border="white", lwd=0.3, add=TRUE)
+br_geoms <- st_geometry(brazil_sf) * matrix(c(sa_scale_x,0,0,sa_scale_y), 2,2)
+br_geoms <- br_geoms + c(inset_x0 - st_bbox(sa_geoms)["xmin"], inset_y0 - st_bbox(sa_geoms)["ymin"])
+plot(br_geoms, col="#888888", border="white", lwd=0.3, add=TRUE)
+rect(inset_x0, inset_y0, inset_x0+inset_w, inset_y0+inset_h, border="grey40", lwd=0.6)
+
+## Painel 2: seleção de segunda ordem -- área de vida dentro da paisagem regional
+lon_c <- mean(cluster_sites_j$longitude); lat_c <- mean(cluster_sites_j$latitude)
+half_span <- 0.35
+asp_val <- 1/cos(lat_c*pi/180)
+plot(NA, xlim=c(lon_c-half_span, lon_c+half_span), ylim=c(lat_c-half_span*0.85, lat_c+half_span*0.85),
+     xlab="", ylab="", axes=FALSE, main="Seleção de segunda ordem", cex.main=1.3, font.main=2, asp=asp_val)
+rect(lon_c-half_span, lat_c-half_span*0.85, lon_c+half_span, lat_c+half_span*0.85, col=COL_AVAIL_J, border=NA)
+for (arr in cluster_arrays_j) {
+  sub <- cluster_sites_j[array_id == arr]
+  if (nrow(sub) >= 3) {
+    hpts <- as.matrix(sub[, .(longitude, latitude)])
+    hull <- chull(hpts)
+    polygon(hpts[c(hull, hull[1]), ], col=COL_USED_J, border="white", lwd=0.3)
+  }
+}
+mtext("Disponível: paisagem regional\nUsado: territórios de arrays individuais\n(áreas de vida)", side=1, line=-2, adj=0, cex=0.65)
+
+## Painel 3: seleção de terceira ordem -- uso do local dentro da área de vida
+example_array_j <- "WI_WI_020"
+sub3 <- cluster_sites_j[array_id == example_array_j]
+hpts3 <- as.matrix(sub3[, .(longitude, latitude)])
+hull3 <- chull(hpts3)
+xr3 <- range(sub3$longitude); yr3 <- range(sub3$latitude)
+xpad3 <- diff(xr3)*0.25; ypad3 <- diff(yr3)*0.25
+plot(NA, xlim=c(xr3[1]-xpad3, xr3[2]+xpad3), ylim=c(yr3[1]-ypad3, yr3[2]+ypad3),
+     xlab="", ylab="", axes=FALSE, main="Seleção de terceira ordem", cex.main=1.3, font.main=2, asp=asp_val)
+polygon(hpts3[c(hull3, hull3[1]), ], col=COL_AVAIL_J, border=NA)
+points(sub3$longitude, sub3$latitude, pch=16, col=COL_USED_J, cex=1.1)
+mtext(sprintf("Disponível: área de vida (%s)\nUsado: locais individuais de câmeras", example_array_j), side=1, line=-2, adj=0, cex=0.65)
+
+mtext("Hierarquia de seleção de habitat de Johnson (1980), ilustrada com dados de armadilhas fotográficas do Snapshot Brasil",
+      outer=TRUE, cex=1.0, font=2, adj=0.02)
+dev.off()
+cat("Salvo figs/m3_johnson_levels_of_selection_pt.png\n\n")
+
 ## ---- 2.3 Agrupamentos de espécies a partir da tabela de coeficientes ----
 cat("== PCA de espécies ==\n")
 pca_params <- c(names(label_map_full))
@@ -729,22 +806,62 @@ pca_wide <- pca_wide[complete.cases(pca_wide[, ..pca_params])]
 pca_mat <- scale(as.matrix(pca_wide[, ..pca_params]))
 pca_fit <- prcomp(pca_mat, center=FALSE, scale.=FALSE)
 ve <- summary(pca_fit)$importance[2, 1:2]
+
+common_names_pt <- fread(file.path(DATA_DIR, "species_common_names_pt.csv"))
+common_lookup_pca <- setNames(common_names_pt$common_name_pt, common_names_pt$sci_pooled)
+species_label_pca <- function(sci) {
+  cn <- common_lookup_pca[sci]
+  if (is.na(cn)) return(sci)
+  cn
+}
+
 scores_dt <- data.table(species=pca_wide$species, PC1=pca_fit$x[,1], PC2=pca_fit$x[,2])
+scores_dt[, label := sapply(species, species_label_pca)]
 km_fit <- kmeans(scores_dt[, .(PC1,PC2)], centers=4, nstart=10)
 scores_dt[, cluster := factor(km_fit$cluster)]
 loadings_dt <- data.table(param=pca_params, PC1=pca_fit$rotation[,1]*3, PC2=pca_fit$rotation[,2]*3)
 loadings_dt[, label := label_map_full[param]]
 
+## Rótulos de direção dos eixos: para cada eixo do PC, encontra a(s)
+## covariável(is) mais fortemente associada(s) com a extremidade positiva vs.
+## negativa, para que o leitor saiba o que "PC1 alto" ou "PC2 baixo" significa
+## ecologicamente sem precisar comparar as setas de carga visualmente.
+axis_dir_label <- function(loadings, axis_col) {
+  vals <- loadings[[axis_col]]
+  labs <- loadings$label
+  pos_idx <- order(-vals)[vals[order(-vals)] > 0]
+  neg_idx <- order(vals)[vals[order(vals)] < 0]
+  pos_terms <- gsub("\\n", " ", labs[pos_idx][1:min(2,length(pos_idx))])
+  neg_terms <- gsub("\\n", " ", labs[neg_idx][1:min(2,length(neg_idx))])
+  list(pos = if (length(pos_terms)) paste(pos_terms, collapse=", ") else "(sem covariável forte)",
+       neg = if (length(neg_terms)) paste(neg_terms, collapse=", ") else "(sem covariável forte)")
+}
+pc1_dir <- axis_dir_label(loadings_dt, "PC1")
+pc2_dir <- axis_dir_label(loadings_dt, "PC2")
+cat("PC1: mais", pc1_dir$pos, "na extremidade positiva; mais", pc1_dir$neg, "na extremidade negativa\n")
+cat("PC2: mais", pc2_dir$pos, "na extremidade positiva; mais", pc2_dir$neg, "na extremidade negativa\n")
+
+xr <- range(scores_dt$PC1); yr <- range(scores_dt$PC2)
+xpad <- diff(xr) * 0.12; ypad <- diff(yr) * 0.12
+
 p_pca <- ggplot(scores_dt, aes(x=PC1, y=PC2)) +
   geom_point(aes(color=cluster), size=3, alpha=0.8) +
+  ggrepel::geom_text_repel(aes(label=label), size=2.4, alpha=0.85, max.overlaps=30,
+                             segment.size=0.2, segment.alpha=0.4, seed=1) +
   geom_segment(data=loadings_dt, aes(x=0,y=0,xend=PC1,yend=PC2), color=COL_NEG,
                arrow=arrow(length=unit(0.2,"cm")), inherit.aes=FALSE) +
   geom_text(data=loadings_dt, aes(x=PC1*1.15, y=PC2*1.15, label=label), color=COL_NEG, size=3, fontface="bold", inherit.aes=FALSE) +
   scale_color_brewer(palette="Set1", name="Grupo") +
+  scale_x_continuous(limits=c(xr[1]-xpad, xr[2]+xpad*2.5),
+                      sec.axis=dup_axis(breaks=xr, labels=c(paste0("mais ", pc1_dir$neg), paste0("mais ", pc1_dir$pos)), name=NULL)) +
+  scale_y_continuous(limits=c(yr[1]-ypad, yr[2]+ypad*2),
+                      sec.axis=dup_axis(breaks=yr, labels=c(paste0("mais ", pc2_dir$neg), paste0("mais ", pc2_dir$pos)), name=NULL)) +
   labs(title="Espécies agrupadas pelo perfil completo de resposta ao habitat (modelo comunitário)",
        x=sprintf("PC1 (%.0f%%)", ve[1]*100), y=sprintf("PC2 (%.0f%%)", ve[2]*100)) +
-  theme_minimal(base_size=12)
-ggsave(file.path(FIGS_DIR, "m3_species_pca_biplot.png"), p_pca, width=9, height=8, dpi=150)
+  theme_minimal(base_size=12) +
+  theme(axis.text.x.top=element_text(size=6.5, color="grey40"),
+        axis.text.y.right=element_text(size=6.5, color="grey40"))
+ggsave(file.path(FIGS_DIR, "m3_species_pca_biplot.png"), p_pca, width=10.5, height=9, dpi=150)
 cat("Salvo figs/m3_species_pca_biplot.png (", nrow(scores_dt), "espécies,", round(sum(ve)*100), "% de variância explicada)\n\n")
 
 
@@ -1055,11 +1172,14 @@ p_overall <- ggplot(overall_comp, aes(x=mean_psi, y=mean_lam)) +
   labs(title=sprintf("Nível geral (r=%.2f)", cor(overall_comp$mean_psi, overall_comp$mean_lam)),
        x="Ocupação média (\u03c8-estimado)", y="Abundância média de Royle-Nichols (\u03bb-estimado)") +
   theme_minimal(base_size=10)
+top2[, common := sapply(species, species_label_pca)]
 p_forest <- ggplot(forest_comp_stable, aes(x=occ_forest, y=rn_forest)) +
   geom_abline(slope=1, intercept=0, linetype="dashed", color="grey60") +
   geom_point(color=COL_NEUTRAL, size=2.5, alpha=0.75) +
-  geom_text(data=top2, aes(label=species), size=2.8, hjust=-0.1, vjust=-0.3) +
-  scale_x_continuous(expand=expansion(mult=c(0.08,0.18))) +
+  ggrepel::geom_text_repel(data=top2, aes(label=common), size=2.8, color="black",
+                             segment.size=0.3, segment.alpha=0.5, seed=2,
+                             box.padding=0.6, max.overlaps=Inf) +
+  scale_x_continuous(expand=expansion(mult=c(0.08,0.22))) +
   labs(title=sprintf("Efeito de floresta especificamente (r=%.2f)", cor(forest_comp_stable$occ_forest, forest_comp_stable$rn_forest)),
        x="Efeito de floresta (ocupância, \u03b2)", y="Efeito de floresta (Royle-Nichols, \u03b2)") +
   theme_minimal(base_size=10)
