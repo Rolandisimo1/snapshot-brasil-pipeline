@@ -298,10 +298,106 @@
     </details>
   </section>
 
+  <section class="module">
+    <h2>Module 5 — Prediction &amp; Mapping <span class="status">ready</span></h2>
+    <p>Projects each species' fitted occupancy model onto a 17,766-cell national grid, at both
+       camera-level (11 covariates) and array-level (6 covariates) resolution. Covers whether a
+       cell should be predicted at all &mdash; MESS extrapolation diagnostics plus five covariate-pair
+       biplots showing where the sampled sites do and don't cover the national covariate space
+       &mdash; the raster-calculator logic behind turning fitted coefficients into a probability
+       surface, AUC/Youden-threshold screening per species at each resolution, and a worked example
+       (South American Coati) showing how camera-level and array-level predictions can diverge for
+       the same species on the same map.</p>
+    <div class="dl-grid">
+      <div class="dl-col">
+        <h4>English</h4>
+        <a class="dl-btn" href="modules/module5/en/module5_prediction_mapping.html">
+          <span><span class="fmt">HTML</span> rendered report</span><span class="size">10.0 MB &middot; view</span>
+        </a>
+        <a class="dl-btn" href="modules/module5/en/module5_prediction_mapping.R" download>
+          <span><span class="fmt">R</span> script</span><span class="size">15 KB &middot; download</span>
+        </a>
+        <a class="dl-btn" href="modules/module5/en/module5_data.zip" download>
+          <span><span class="fmt">ZIP</span> input data</span><span class="size">1.4 MB &middot; download</span>
+        </a>
+      </div>
+      <div class="dl-col">
+        <h4>Português</h4>
+        <a class="dl-btn" href="modules/module5/pt/module5_prediction_mapping_pt.html">
+          <span><span class="fmt">HTML</span> relatório renderizado</span><span class="size">10.0 MB &middot; ver</span>
+        </a>
+        <a class="dl-btn" href="modules/module5/pt/module5_prediction_mapping_pt.R" download>
+          <span><span class="fmt">R</span> script</span><span class="size">15 KB &middot; baixar</span>
+        </a>
+        <a class="dl-btn" href="modules/module5/pt/module5_data.zip" download>
+          <span><span class="fmt">ZIP</span> dados de entrada</span><span class="size">1.4 MB &middot; baixar</span>
+        </a>
+      </div>
+    </div>
+    <details style="margin-top:1rem;">
+      <summary style="cursor:pointer; font-weight:600;">Figures produced by this script (7)</summary>
+      <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(220px,1fr)); gap:0.75rem; margin-top:0.75rem;">
+        <img src="modules/module5/en/figs/mess_extrapolation_11cov.png" alt="Should we predict here? Extrapolation diagnostics (MESS + covariate coverage, 11-covariate model)" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module5/en/figs/worked_example_coati.png" alt="Same species, same covariates, two model resolutions (South American Coati)" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module5/en/figs/gallery_camera_highAUC.png" alt="Camera-level occupancy predictions, high-quality models (AUC >= 0.70)" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module5/en/figs/gallery_camera_lowAUC.png" alt="Camera-level occupancy predictions, weaker models (AUC < 0.70)" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module5/en/figs/gallery_array_highAUC.png" alt="Array-level occupancy predictions, high-quality models (AUC >= 0.70)" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module5/en/figs/gallery_array_lowAUC.png" alt="Array-level occupancy predictions, weaker models (AUC < 0.70)" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module5/en/figs/camera_vs_array_auc_11cov.png" alt="Camera-level vs array-level AUC, per species" loading="lazy" style="width:100%; border-radius:4px;">
+      </div>
+    </details>
+  </section>
+
+  <section class="module">
+    <h2>Module 6 — Species Interactions <span class="status">ready</span></h2>
+    <p>Tests whether one species' abundance predicts another's, using a paired N-mixture model
+       fit at the 60-array resolution (occupancy-based co-occurrence tests are documented here to
+       need far more sites than this dataset has to reliably detect an interaction). Of 30
+       driver&rarr;responder pairs &mdash; the original a-priori/GJAM-flagged set plus 10 dog-driven pairs
+       &mdash; 7 show a 95% credible interaction, shown both as a ranked forest plot and as fitted
+       response curves against each array's own driver/responder abundance. A second, independent
+       network comes from GJAM's residual co-occurrence (habitat effects removed) across all 44
+       species, expanded here since Module 4 only briefly introduces it.</p>
+    <div class="dl-grid">
+      <div class="dl-col">
+        <h4>English</h4>
+        <a class="dl-btn" href="modules/module6/en/module6_species_interactions.html">
+          <span><span class="fmt">HTML</span> rendered report</span><span class="size">2.2 MB &middot; view</span>
+        </a>
+        <a class="dl-btn" href="modules/module6/en/module6_species_interactions.R" download>
+          <span><span class="fmt">R</span> script</span><span class="size">9 KB &middot; download</span>
+        </a>
+        <a class="dl-btn" href="modules/module6/en/module6_data.zip" download>
+          <span><span class="fmt">ZIP</span> input data</span><span class="size">52 KB &middot; download</span>
+        </a>
+      </div>
+      <div class="dl-col">
+        <h4>Português</h4>
+        <a class="dl-btn" href="modules/module6/pt/module6_species_interactions_pt.html">
+          <span><span class="fmt">HTML</span> relatório renderizado</span><span class="size">2.2 MB &middot; ver</span>
+        </a>
+        <a class="dl-btn" href="modules/module6/pt/module6_species_interactions_pt.R" download>
+          <span><span class="fmt">R</span> script</span><span class="size">9 KB &middot; baixar</span>
+        </a>
+        <a class="dl-btn" href="modules/module6/pt/module6_data.zip" download>
+          <span><span class="fmt">ZIP</span> dados de entrada</span><span class="size">52 KB &middot; baixar</span>
+        </a>
+      </div>
+    </div>
+    <details style="margin-top:1rem;">
+      <summary style="cursor:pointer; font-weight:600;">Figures produced by this script (4)</summary>
+      <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(220px,1fr)); gap:0.75rem; margin-top:0.75rem;">
+        <img src="modules/module6/en/figs/gamma0_forest_all_pairs.png" alt="Abundance-mediated interaction strength, all 30 array-level pairs" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module6/en/figs/abundance_response_curves_array.png" alt="How the responder's fitted abundance changes with driver abundance, the 7 significant pairs" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module6/en/figs/interaction_network_abundance.png" alt="Abundance-mediated species interaction network, all 30 array-level pairs" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module6/en/figs/gjam_network_full.png" alt="GJAM residual co-occurrence network (|r| > 0.4, habitat effects removed)" loading="lazy" style="width:100%; border-radius:4px;">
+      </div>
+    </details>
+  </section>
+
   <section class="module" style="opacity:0.55;">
-    <h2>Modules 5&ndash;7 <span class="status pending">in progress</span></h2>
-    <p>Prediction &amp; mapping, species interactions, and temporal analysis. Posted once final
-       revisions are complete.</p>
+    <h2>Module 7 <span class="status pending">in progress</span></h2>
+    <p>Temporal analysis. Posted once final revisions are complete.</p>
   </section>
 
   <div class="data-block">
@@ -513,10 +609,109 @@
     </details>
   </section>
 
+  <section class="module">
+    <h2>Módulo 5 — Predição e Mapeamento <span class="status">pronto</span></h2>
+    <p>Projeta o modelo de ocupação ajustado de cada espécie sobre uma grade nacional de 17.766
+       células, tanto em resolução de nível de câmera (11 covariáveis) quanto de nível de array (6
+       covariáveis). Aborda se uma célula deveria sequer ser prevista &mdash; diagnósticos de
+       extrapolação MESS mais cinco biplots de pares de covariáveis mostrando onde os sítios
+       amostrados cobrem (ou não) o espaço nacional de covariáveis &mdash; a lógica de calculadora
+       de raster por trás de transformar coeficientes ajustados em uma superfície de probabilidade,
+       triagem de AUC/limiar de Youden por espécie em cada resolução, e um exemplo trabalhado
+       (Quati) mostrando como as predições em nível de câmera e de array podem divergir para a
+       mesma espécie no mesmo mapa.</p>
+    <div class="dl-grid">
+      <div class="dl-col">
+        <h4>English</h4>
+        <a class="dl-btn" href="modules/module5/en/module5_prediction_mapping.html">
+          <span><span class="fmt">HTML</span> rendered report</span><span class="size">10.0 MB &middot; view</span>
+        </a>
+        <a class="dl-btn" href="modules/module5/en/module5_prediction_mapping.R" download>
+          <span><span class="fmt">R</span> script</span><span class="size">15 KB &middot; download</span>
+        </a>
+        <a class="dl-btn" href="modules/module5/en/module5_data.zip" download>
+          <span><span class="fmt">ZIP</span> input data</span><span class="size">1.4 MB &middot; download</span>
+        </a>
+      </div>
+      <div class="dl-col">
+        <h4>Português</h4>
+        <a class="dl-btn" href="modules/module5/pt/module5_prediction_mapping_pt.html">
+          <span><span class="fmt">HTML</span> relatório renderizado</span><span class="size">10.0 MB &middot; ver</span>
+        </a>
+        <a class="dl-btn" href="modules/module5/pt/module5_prediction_mapping_pt.R" download>
+          <span><span class="fmt">R</span> script</span><span class="size">15 KB &middot; baixar</span>
+        </a>
+        <a class="dl-btn" href="modules/module5/pt/module5_data.zip" download>
+          <span><span class="fmt">ZIP</span> dados de entrada</span><span class="size">1.4 MB &middot; baixar</span>
+        </a>
+      </div>
+    </div>
+    <details style="margin-top:1rem;">
+      <summary style="cursor:pointer; font-weight:600;">Figuras produzidas por este script (7)</summary>
+      <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(220px,1fr)); gap:0.75rem; margin-top:0.75rem;">
+        <img src="modules/module5/pt/figs/mess_extrapolation_11cov.png" alt="Devemos prever aqui? Diagnósticos de extrapolação (MESS + cobertura de covariáveis, modelo de 11 covariáveis)" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module5/pt/figs/worked_example_coati.png" alt="Mesma espécie, mesmas covariáveis, duas resoluções de modelo (Quati)" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module5/pt/figs/gallery_camera_highAUC.png" alt="Predições de ocupação em nível de câmera, modelos de alta qualidade (AUC >= 0,70)" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module5/pt/figs/gallery_camera_lowAUC.png" alt="Predições de ocupação em nível de câmera, modelos mais fracos (AUC < 0,70)" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module5/pt/figs/gallery_array_highAUC.png" alt="Predições de ocupação em nível de array, modelos de alta qualidade (AUC >= 0,70)" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module5/pt/figs/gallery_array_lowAUC.png" alt="Predições de ocupação em nível de array, modelos mais fracos (AUC < 0,70)" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module5/pt/figs/camera_vs_array_auc_11cov.png" alt="AUC em nível de câmera vs nível de array, por espécie" loading="lazy" style="width:100%; border-radius:4px;">
+      </div>
+    </details>
+  </section>
+
+  <section class="module">
+    <h2>Módulo 6 — Interações entre Espécies <span class="status">pronto</span></h2>
+    <p>Testa se a abundância de uma espécie prevê a de outra, usando um modelo N-mixture pareado
+       ajustado na resolução de 60 arrays (testes de co-ocorrência baseados em ocupação são aqui
+       documentados como precisando de muito mais sítios do que este conjunto de dados possui para
+       detectar de forma confiável uma interação). De 30 pares motriz&rarr;respondente &mdash; o
+       conjunto original a-priori/sinalizado pelo GJAM mais 10 pares conduzidos pelo cachorro
+       &mdash; 7 mostram uma interação com 95% de credibilidade, apresentada tanto como um gráfico
+       de floresta ranqueado quanto como curvas de resposta ajustadas contra a abundância própria
+       de cada array. Uma segunda rede, independente, vem da co-ocorrência residual do GJAM
+       (efeitos de habitat removidos) entre as 44 espécies, expandida aqui já que o Módulo 4 a
+       introduz apenas brevemente.</p>
+    <div class="dl-grid">
+      <div class="dl-col">
+        <h4>English</h4>
+        <a class="dl-btn" href="modules/module6/en/module6_species_interactions.html">
+          <span><span class="fmt">HTML</span> rendered report</span><span class="size">2.2 MB &middot; view</span>
+        </a>
+        <a class="dl-btn" href="modules/module6/en/module6_species_interactions.R" download>
+          <span><span class="fmt">R</span> script</span><span class="size">9 KB &middot; download</span>
+        </a>
+        <a class="dl-btn" href="modules/module6/en/module6_data.zip" download>
+          <span><span class="fmt">ZIP</span> input data</span><span class="size">52 KB &middot; download</span>
+        </a>
+      </div>
+      <div class="dl-col">
+        <h4>Português</h4>
+        <a class="dl-btn" href="modules/module6/pt/module6_species_interactions_pt.html">
+          <span><span class="fmt">HTML</span> relatório renderizado</span><span class="size">2.2 MB &middot; ver</span>
+        </a>
+        <a class="dl-btn" href="modules/module6/pt/module6_species_interactions_pt.R" download>
+          <span><span class="fmt">R</span> script</span><span class="size">9 KB &middot; baixar</span>
+        </a>
+        <a class="dl-btn" href="modules/module6/pt/module6_data.zip" download>
+          <span><span class="fmt">ZIP</span> dados de entrada</span><span class="size">52 KB &middot; baixar</span>
+        </a>
+      </div>
+    </div>
+    <details style="margin-top:1rem;">
+      <summary style="cursor:pointer; font-weight:600;">Figuras produzidas por este script (4)</summary>
+      <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(220px,1fr)); gap:0.75rem; margin-top:0.75rem;">
+        <img src="modules/module6/pt/figs/gamma0_forest_all_pairs.png" alt="Força de interação mediada pela abundância, todos os 30 pares em nível de array" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module6/pt/figs/abundance_response_curves_array.png" alt="Como a abundância ajustada da espécie respondente muda com a abundância da espécie motriz, os 7 pares significativos" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module6/pt/figs/interaction_network_abundance.png" alt="Rede de interação entre espécies mediada pela abundância, todos os 30 pares em nível de array" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module6/pt/figs/gjam_network_full.png" alt="Rede de co-ocorrência residual do GJAM (|r| > 0,4, efeitos de habitat removidos)" loading="lazy" style="width:100%; border-radius:4px;">
+      </div>
+    </details>
+  </section>
+
   <section class="module" style="opacity:0.55;">
-    <h2>Módulos 5&ndash;7 <span class="status pending">em andamento</span></h2>
-    <p>Predição e mapeamento, interações entre espécies, e análise temporal. Publicados assim que
-       as revisões finais estiverem completas.</p>
+    <h2>Módulo 7 <span class="status pending">em andamento</span></h2>
+    <p>Análise temporal. Publicado assim que as revisões finais estiverem completas.</p>
   </section>
 
   <div class="data-block">
