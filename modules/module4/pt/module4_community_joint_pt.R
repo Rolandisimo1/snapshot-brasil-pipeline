@@ -3,56 +3,58 @@
 ## Pipeline de câmeras-trap multi-rede do Snapshot Brasil
 ## =============================================================================
 ##
-## 1. AUTOCONTIDO: este script parte dos três arquivos brutos de dataset combinado
-## 2. (implantações, detecções de mamíferos, covariáveis de sensoriamento remoto) mais
-## 3. quatro tabelas de referência do Módulo 2/3, e constrói tudo do
-## 4. zero -- históricos de detecção para 44 espécies modeladas, a máscara de distribuição,
-## 5. e todos os ajustes de modelo (ocupação de comunidade com uma
-## 6. meta-regressão de traço de espécie, GJAM, Royle-Nichols, ocupação de espécie única, e uma
-## 7. linha de base ingênua de regressão logística). Coloque este script na mesma pasta
-## 8. dos sete arquivos de dados listados abaixo e execute-o de cima a baixo.
+## AUTOCONTIDO: este script parte dos três arquivos brutos de dataset combinado
+## (implantações, detecções de mamíferos, covariáveis de sensoriamento remoto) mais
+## quatro tabelas de referência do Módulo 2/3, e constrói tudo do
+## zero -- históricos de detecção para 44 espécies modeladas, a máscara de distribuição,
+## e todos os ajustes de modelo (ocupação de comunidade com uma
+## meta-regressão de traço de espécie, GJAM, Royle-Nichols, ocupação de espécie única, e uma
+## linha de base ingênua de regressão logística). Coloque este script na mesma pasta
+## dos sete arquivos de dados listados abaixo e execute-o de cima a baixo.
 ##
-## 9. Arquivos de entrada necessários (em DATA_DIR, padrão "data" ao lado deste script):
-## 10. final_deployments.csv         -- uma linha por implantação de câmera
-## 11. final_detections_mammals.csv  -- uma linha por evento de detecção independente
-## 12. final_covariates.csv          -- uma linha por local de câmera, covariáveis de sensoriamento remoto
-## 13. array_covariates.csv          -- uma linha por array de câmeras, o conjunto reduzido de 6 covariáveis
-## 14. ARRAY_SET (design em nível de array do Módulo 2/3)
-## 15. species_list.json             -- as 44 espécies/gêneros modelados neste módulo
-## 16. (>=10 detecções, >=20 locais, conforme a regra do Módulo 3)
-## 17. species_range_mask.csv        -- máscara de distribuição local x espécie da IUCN (1 = candidato,
-## 18. 0 = zero estrutural); saída do próprio montador de
-## 19. máscara de distribuição do Módulo 4 (ver notas de preparo do Módulo 4)
-## 20. species_traits.csv            -- massa corporal logarítmica por espécie (padronizada em z) e classe
-## 21. de dieta (herbívoro/onívoro, carnívoro = referência),
-## 22. do COMBINE (Soria et al. 2021) associado via a
-## 23. taxonomia da Mammal Diversity Database
+## Arquivos de entrada necessários (em DATA_DIR, padrão "data" ao lado deste script):
+## final_deployments.csv         -- uma linha por implantação de câmera
+## final_detections_mammals.csv  -- uma linha por evento de detecção independente
+## final_covariates.csv          -- uma linha por local de câmera, covariáveis de sensoriamento remoto
+## array_covariates.csv          -- uma linha por array de câmeras, as mesmas 11 covariáveis de
+##                                     final_covariates.csv agregadas ao nível de array (usada apenas
+##                                     como tabela de referência neste módulo; as análises abaixo rodam
+##                                     todas no nível de câmera)
+## species_list.json             -- as 44 espécies/gêneros modelados neste módulo
+## (>=10 detecções, >=20 locais, conforme a regra do Módulo 3)
+## species_range_mask.csv        -- máscara de distribuição local x espécie da IUCN (1 = candidato,
+## 0 = zero estrutural); saída do próprio montador de
+## máscara de distribuição do Módulo 4 (ver notas de preparo do Módulo 4)
+## species_traits.csv            -- massa corporal logarítmica por espécie (padronizada em z) e classe
+## de dieta (herbívoro/onívoro, carnívoro = referência),
+## do COMBINE (Soria et al. 2021) associado via a
+## taxonomia da Mammal Diversity Database
 ##
-## 24. Os últimos quatro arquivos são saídas de referência do trabalho de seleção de covariáveis
-## 25. do Módulo 2, da regra de seleção de espécies do Módulo 3, do montador de máscara de distribuição do Módulo 4, e
-## 26. de uma associação única com banco de dados de traços, e não podem ser reconstruídos a partir dos três
-## 27. arquivos de dados principais isoladamente -- eles são fornecidos junto com este script como tabelas
-## 28. de referência fixas, da mesma forma que o Módulo 3 fornece suas quatro tabelas de referência de máscara de distribuição/taxonomia.
+## Os últimos quatro arquivos são saídas de referência do trabalho de seleção de covariáveis
+## do Módulo 2, da regra de seleção de espécies do Módulo 3, do montador de máscara de distribuição do Módulo 4, e
+## de uma associação única com banco de dados de traços, e não podem ser reconstruídos a partir dos três
+## arquivos de dados principais isoladamente -- eles são fornecidos junto com este script como tabelas
+## de referência fixas, da mesma forma que o Módulo 3 fornece suas quatro tabelas de referência de máscara de distribuição/taxonomia.
 ##
-## 29. Cinco métodos são ajustados e comparados, todos no MESMO CAMERA_SET de 11 covariáveis
-## 30. (floresta, savana, pastagem, cultivo agrícola, vegetação nativa, temperatura,
-## 31. precipitação, status de área protegida, desenvolvimento, distância à estrada,
-## 32. distância à água):
-## 33. 1. Ocupação de comunidade (Dorazio-Royle) -- todas as 44 espécies conjuntamente, com
-## 34. pooling parcial entre espécies e uma meta-regressão de traço de espécie
-## 35. nos interceptos de ocupação/detecção.
-## 36. 2. GJAM (modelo conjunto de distribuição de espécies) -- co-ocorrência residual
-## 37. após o habitat ser contabilizado.
-## 38. 3. Modelo de heterogeneidade induzida por abundância Royle-Nichols (occuRN), ajustado
-## 39. por espécie.
-## 40. 4. Ocupação de espécie única (spOccupancy::PGOcc) com um efeito aleatório
-## 41. de array, ajustado por espécie, com máscara de distribuição.
-## 42. 5. Uma regressão logística ingênua (sem modelo de detecção) -- mostrada
-## 43. deliberadamente para ilustrar os problemas de separação que ela produz em
-## 44. covariáveis esparsas de cobertura do solo.
+## Cinco métodos são ajustados e comparados, todos no MESMO CAMERA_SET de 11 covariáveis
+## (floresta, savana, pastagem, cultivo agrícola, vegetação nativa, temperatura,
+## precipitação, status de área protegida, desenvolvimento, distância à estrada,
+## distância à água):
+## 1. Ocupação de comunidade (Dorazio-Royle) -- todas as 44 espécies conjuntamente, com
+## pooling parcial entre espécies e uma meta-regressão de traço de espécie
+## nos interceptos de ocupação/detecção.
+## 2. GJAM (modelo conjunto de distribuição de espécies) -- co-ocorrência residual
+## após o habitat ser contabilizado.
+## 3. Modelo de heterogeneidade induzida por abundância Royle-Nichols (occuRN), ajustado
+## por espécie.
+## 4. Ocupação de espécie única (spOccupancy::PGOcc) com um efeito aleatório
+## de array, ajustado por espécie, com máscara de distribuição.
+## 5. Uma regressão logística ingênua (sem modelo de detecção) -- mostrada
+## deliberadamente para ilustrar os problemas de separação que ela produz em
+## covariáveis esparsas de cobertura do solo.
 ##
-## 45. Requer: data.table, ggplot2, ggrepel, jagsUI (rjags/JAGS instalado
-## 46. separadamente), gjam, unmarked, spOccupancy.
+## Requer: data.table, ggplot2, ggrepel, jagsUI (rjags/JAGS instalado
+## separadamente), gjam, unmarked, spOccupancy.
 
 suppressMessages({
   library(data.table)
@@ -92,7 +94,7 @@ set.seed(1)
 dep <- fread(file.path(DATA_DIR, "final_deployments.csv"))
 det <- fread(file.path(DATA_DIR, "final_detections_mammals.csv"))
 cov <- fread(file.path(DATA_DIR, "final_covariates.csv"))
-arr_cov <- fread(file.path(DATA_DIR, "array_covariates.csv"))
+arr_cov <- fread(file.path(DATA_DIR, "array_covariates.csv"))  # carregado por referência; nao usado abaixo (este modulo ajusta no nivel de camera)
 
 dep[, start_dt := as.IDate(start_date)]
 dep[, end_dt   := as.IDate(end_date)]
@@ -106,11 +108,11 @@ cat("Sites:", nrow(site_tbl), "| Arrays:", uniqueN(site_tbl$array_id), "\n")
 sc <- merge(site_tbl, cov[, -"array_id"], by = "site_id", all.x = TRUE)  # "array_id" já presente em site_tbl
 setorder(sc, site_id)
 
-# 1. Excluir listwise os sites com uma ou mais das 11 covariáveis em nível de câmera ausentes
-# 2. ANTES de construir qualquer coisa a jusante -- todo método neste módulo (e
-# 3. toda consulta de referência distribuída junto com este script) é construído sobre este
-# 4. mesmo conjunto de sites candidatos, então a exclusão precisa acontecer aqui, não apenas ser
-# 5. relatada e silenciosamente ignorada.
+# Excluir listwise os sites com uma ou mais das 11 covariáveis em nível de câmera ausentes
+# ANTES de construir qualquer coisa a jusante -- todo método neste módulo (e
+# toda consulta de referência distribuída junto com este script) é construído sobre este
+# mesmo conjunto de sites candidatos, então a exclusão precisa acontecer aqui, não apenas ser
+# relatada e silenciosamente ignorada.
 n_missing_cov <- sum(!complete.cases(sc[, ..CAMERA_COVARS]))
 cat("Sites missing one or more covariates (excluded, listwise deletion):", n_missing_cov, "\n\n")
 sc <- sc[complete.cases(sc[, ..CAMERA_COVARS])]
@@ -134,11 +136,11 @@ sc[, array_num := match(array_id, arrays_sorted)]
 species <- fromJSON <- jsonlite::fromJSON(file.path(DATA_DIR, "species_list.json"))
 cat("Modeled species/genera:", length(species), "\n\n")
 
-# 1. Uma janela de amostragem ativa por site: a data de início mais antiga e a data de término mais recente entre
-# 2. as implantações daquele site (um site pode ter várias implantações ao longo do tempo).
-# 3. As ocasiões são ancoradas na PRÓPRIA DATA DE INÍCIO DE CADA SITE -- e não em uma única data
-# 4. global -- já que os sites abrangem períodos de calendário muito diferentes (este conjunto de dados
-# 5. reúne múltiplas redes coletadas ao longo de mais de uma década).
+# Uma janela de amostragem ativa por site: a data de início mais antiga e a data de término mais recente entre
+# as implantações daquele site (um site pode ter várias implantações ao longo do tempo).
+# As ocasiões são ancoradas na PRÓPRIA DATA DE INÍCIO DE CADA SITE -- e não em uma única data
+# global -- já que os sites abrangem períodos de calendário muito diferentes (este conjunto de dados
+# reúne múltiplas redes coletadas ao longo de mais de uma década).
 site_window <- dep[, .(site_start = min(start_dt, na.rm=TRUE), site_end = max(end_dt, na.rm=TRUE)), by = site_id]
 max_days <- as.integer(max(site_window$site_end - site_window$site_start, na.rm = TRUE))
 max_occ <- ceiling(max_days / OCC_DAYS)
@@ -147,9 +149,9 @@ n_sites <- length(site_ids_ordered)
 site_window <- site_window[match(site_ids_ordered, site_id)]
 site_start_lookup <- setNames(site_window$site_start, site_window$site_id)
 
-# 1. matriz base do levantamento: quais ocasiões foram efetivamente amostradas em cada sítio
-# 2. (um sítio pode ter LACUNAS entre as instalações -- apenas as ocasiões efetivamente
-# 3. cobertas por uma janela de instalação são marcadas como amostradas).
+# matriz base do levantamento: quais ocasiões foram efetivamente amostradas em cada sítio
+# (um sítio pode ter LACUNAS entre as instalações -- apenas as ocasiões efetivamente
+# cobertas por uma janela de instalação são marcadas como amostradas).
 occ_active <- list()
 for (sid in site_ids_ordered) {
   dsub <- dep[site_id == sid]
@@ -173,11 +175,11 @@ n_missing_date <- sum(is.na(det$date) | is.na(as.IDate(det$date)))
 if (n_missing_date > 0) cat("Detections with missing/unparseable date, excluded:", n_missing_date, "\n")
 det <- det[!is.na(date) & !is.na(as.IDate(date)) & site_id %in% site_ids_ordered]
 det[, ddate := as.IDate(date)]
-# 1. Restringir às detecções que caem dentro da PRÓPRIA JANELA DE AMOSTRAGEM DO SITE
-# 2. (site_start até site_end, inclusive) -- corresponde exatamente à convenção
-# 3. original do pipeline. Sem esse filtro, uma detecção registrada após o
-# 4. término da implantação de um site com janela curta (mas ainda dentro do limite
-# 5. max_occ do conjunto de dados) seria admitida indevidamente através da janela mais longa de outro site.
+# Restringir às detecções que caem dentro da PRÓPRIA JANELA DE AMOSTRAGEM DO SITE
+# (site_start até site_end, inclusive) -- corresponde exatamente à convenção
+# original do pipeline. Sem esse filtro, uma detecção registrada após o
+# término da implantação de um site com janela curta (mas ainda dentro do limite
+# max_occ do conjunto de dados) seria admitida indevidamente através da janela mais longa de outro site.
 site_end_lookup <- setNames(site_window$site_end, site_window$site_id)
 n_outside_window <- sum(!(det$ddate >= site_start_lookup[det$site_id] & det$ddate <= site_end_lookup[det$site_id]))
 if (n_outside_window > 0) cat("Detections outside their site's own survey window, excluded:", n_outside_window, "\n")
@@ -195,8 +197,8 @@ build_dethist <- function(sci) {
   y
 }
 
-# 1. Matrizes ysum/K: contagem de detecções colapsada por ocasião e ocasiões amostradas
-# 2. contagem por site x espécie, seguindo a convenção do Módulo 3/6 ao longo de todo o texto.
+# Matrizes ysum/K: contagem de detecções colapsada por ocasião e ocasiões amostradas
+# contagem por site x espécie, seguindo a convenção do Módulo 3/6 ao longo de todo o texto.
 S <- length(species)
 ysum <- matrix(0L, nrow = n_sites, ncol = S, dimnames = list(site_ids_ordered, species))
 K    <- matrix(0L, nrow = n_sites, ncol = S, dimnames = list(site_ids_ordered, species))
@@ -209,13 +211,13 @@ cat("Total detections across all 44 species:", sum(ysum), "\n\n")
 
 
 ## =============================================================================
-## 1. ETAPA 3: MÁSCARA DE DISTRIBUIÇÃO E TRAÇOS DAS ESPÉCIES (tabelas de referência)
+## ETAPA 3: MÁSCARA DE DISTRIBUIÇÃO E TRAÇOS DAS ESPÉCIES (tabelas de referência)
 ## =============================================================================
-## 2. A máscara de distribuição (1 = local é candidato, 0 = zero estrutural -- fora
-## 3. da distribuição da IUCN com buffer da espécie e nunca detectada ali) é uma tabela
-## 4. 0/1 por espécie/por local construída uma única vez pelo próprio montador de máscara
-## 5. de distribuição do Módulo 4 (ver as notas de preparo do Módulo 4) e distribuída como uma referência fixa,
-## 6. da mesma forma que o Módulo 3 distribui suas tabelas de exclusão.
+## A máscara de distribuição (1 = local é candidato, 0 = zero estrutural -- fora
+## da distribuição da IUCN com buffer da espécie e nunca detectada ali) é uma tabela
+## 0/1 por espécie/por local construída uma única vez pelo próprio montador de máscara
+## de distribuição do Módulo 4 (ver as notas de preparo do Módulo 4) e distribuída como uma referência fixa,
+## da mesma forma que o Módulo 3 distribui suas tabelas de exclusão.
 
 rng_dt <- fread(file.path(DATA_DIR, "species_range_mask.csv"))
 rng <- as.matrix(rng_dt[match(site_ids_ordered, rng_dt$site_id), ..species])
@@ -223,10 +225,10 @@ rng[is.na(rng)] <- 1L  # Espécies sem distribuição mapeada assumem por padrã
 storage.mode(rng) <- "integer"
 cat("Range-masked (structural-zero) site x species cells:", sum(rng == 0), "of", length(rng), "\n\n")
 
-## 1. Traços das espécies: log da massa corporal (padronizado por z-score) e classe de dieta
-## 2. (herbívoro/onívoro, carnívoro = nível de referência), do banco de dados de traços de mamíferos COMBINE
-## 3. (Soria et al. 2021), pareado com a lista de espécies deste pipeline
-## 4. por meio da taxonomia do Mammal Diversity Database.
+## Traços das espécies: log da massa corporal (padronizado por z-score) e classe de dieta
+## (herbívoro/onívoro, carnívoro = nível de referência), do banco de dados de traços de mamíferos COMBINE
+## (Soria et al. 2021), pareado com a lista de espécies deste pipeline
+## por meio da taxonomia do Mammal Diversity Database.
 traits <- fread(file.path(DATA_DIR, "species_traits.csv"))
 trait_mat <- as.matrix(traits[match(species, traits$species),
                                .(log_mass_z, diet_herbivore, diet_omnivore)])
@@ -349,13 +351,13 @@ cat("\nTrait effects:\n"); print(trait_out[, .(param, mean=round(mean,2))])
 
 
 ## =============================================================================
-## 1. PASSO 5: MÉTODO 2 -- GJAM (MODELO CONJUNTO DE DISTRIBUIÇÃO DE ESPÉCIES)
+## PASSO 5: MÉTODO 2 -- GJAM (MODELO CONJUNTO DE DISTRIBUIÇÃO DE ESPÉCIES)
 ## =============================================================================
-## 2. O GJAM modela as 44 espécies em conjunto e, após ajustar os efeitos de hábitat,
-## 3. reporta a correlação RESIDUAL entre espécies -- co-ocorrência que
-## 4. o hábitat sozinho não explica. inrangeFrac (a fração das 44
-## 5. espécies cuja distribuição mapeada inclui este local) entra como uma covariável
-## 6. adicional para que a co-ocorrência causada pela distribuição não seja interpretada erroneamente como sinal biótico.
+## O GJAM modela as 44 espécies em conjunto e, após ajustar os efeitos de hábitat,
+## reporta a correlação RESIDUAL entre espécies -- co-ocorrência que
+## o hábitat sozinho não explica. inrangeFrac (a fração das 44
+## espécies cuja distribuição mapeada inclui este local) entra como uma covariável
+## adicional para que a co-ocorrência causada pela distribuição não seja interpretada erroneamente como sinal biótico.
 
 inrange_frac <- rowMeans(rng)
 xdata_gjam <- data.table(
@@ -397,12 +399,12 @@ if (RUN_LIVE_GJAM) {
 
 
 ## =============================================================================
-## 1. PASSO 6: MÉTODO 3 -- MODELO DE ABUNDÂNCIA ROYLE-NICHOLS (occuRN)
+## PASSO 6: MÉTODO 3 -- MODELO DE ABUNDÂNCIA ROYLE-NICHOLS (occuRN)
 ## =============================================================================
-## 2. O occuRN trata a heterogeneidade de detecção como uma assinatura de abundância
-## 3. não observada: lambda ~ todas as 11 covariáveis, p ~ apenas intercepto, ajustado por espécie.
+## O occuRN trata a heterogeneidade de detecção como uma assinatura de abundância
+## não observada: lambda ~ todas as 11 covariáveis, p ~ apenas intercepto, ajustado por espécie.
 
-RUN_LIVE_RN <- FALSE  # 4. ajustes por espécie, poucos segundos cada; definir como TRUE para reajustar
+RUN_LIVE_RN <- FALSE  # ajustes por espécie, poucos segundos cada; definir como TRUE para reajustar
 
 if (RUN_LIVE_RN) {
   occ_form_rn <- as.formula(paste("~1 ~", paste(CAMERA_COVARS_Z, collapse="+")))
@@ -431,13 +433,13 @@ if (RUN_LIVE_RN) {
 
 
 ## =============================================================================
-## 1. PASSO 7: MÉTODO 4 -- OCUPAÇÃO DE ESPÉCIE ÚNICA (spOccupancy::PGOcc)
+## PASSO 7: MÉTODO 4 -- OCUPAÇÃO DE ESPÉCIE ÚNICA (spOccupancy::PGOcc)
 ## =============================================================================
-## 2. O método padrão de espécie única do pipeline (Módulo 3), reajustado aqui
-## 3. no conjunto de 11 covariáveis com a máscara de distribuição aplicada (sítios fora
-## 4. da distribuição removidos da verossimilhança daquela espécie) e um efeito aleatório de array.
+## O método padrão de espécie única do pipeline (Módulo 3), reajustado aqui
+## no conjunto de 11 covariáveis com a máscara de distribuição aplicada (sítios fora
+## da distribuição removidos da verossimilhança daquela espécie) e um efeito aleatório de array.
 
-RUN_LIVE_PGOCC <- FALSE  # 5. MCMC por espécie, alguns segundos a ~1 min cada; defina TRUE para reajustar
+RUN_LIVE_PGOCC <- FALSE  # MCMC por espécie, alguns segundos a ~1 min cada; defina TRUE para reajustar
 
 if (RUN_LIVE_PGOCC) {
   pgocc_results <- list()
@@ -475,11 +477,11 @@ if (RUN_LIVE_PGOCC) {
 
 
 ## =============================================================================
-## 1. PASSO 8: MÉTODO 5 -- REGRESSÃO LOGÍSTICA INGÊNUA (sem modelo de detecção)
+## PASSO 8: MÉTODO 5 -- REGRESSÃO LOGÍSTICA INGÊNUA (sem modelo de detecção)
 ## =============================================================================
-## 2. Uma referência deliberadamente ingênua: presença/ausência por local, sem submodelo
-## 3. de detecção. Apresentada para ilustrar os problemas de separação perfeita que produz
-## 4. em covariáveis esparsas de uso do solo -- o ponto pedagógico de incluí-la.
+## Uma referência deliberadamente ingênua: presença/ausência por local, sem submodelo
+## de detecção. Apresentada para ilustrar os problemas de separação perfeita que produz
+## em covariáveis esparsas de uso do solo -- o ponto pedagógico de incluí-la.
 
 glm_coefs <- list()
 for (s in seq_len(S)) {
@@ -516,17 +518,17 @@ cat("Naive GLM: degenerate (perfect-separation) fits:", sum(glm_out$degenerate),
 common_names <- fread(file.path(DATA_DIR, "species_common_names.csv"))
 common_map <- setNames(common_names$common, common_names$species)
 
-# 1. O PGOcc usa nomes abreviados de parâmetros (forest_z, nveg_z, built_z, distroad_z,
-# 2. distwater_z) que não correspondem aos nomes brutos das covariáveis por simples remoção de sufixo;
-# 3. mapeie-os explicitamente para os nomes canônicos de CAMERA_COVARS.
+# O PGOcc usa nomes abreviados de parâmetros (forest_z, nveg_z, built_z, distroad_z,
+# distwater_z) que não correspondem aos nomes brutos das covariáveis por simples remoção de sufixo;
+# mapeie-os explicitamente para os nomes canônicos de CAMERA_COVARS.
 pgocc_name_map <- c(forest_z="forest_100m", savanna_z="savanna_100m", pasture_z="pasture_100m",
                      cropland_z="cropland_100m", nveg_z="native_veg_1000m", temp_z="temp_mean_C",
                      precip_z="precip_annual_mm", in_pa="in_pa", built_z="ghsl_built_5000m",
                      distroad_z="dist_road_m", distwater_z="dist_water_m")
 
-# 1. Os nomes de preditores do GJAM carregam um sufixo "Z" (forestZ, savannaZ, ...) e sua
-# 2. própria transformação dos nomes de espécies (make.names sobre o nome científico); mapeie ambos
-# 3. de volta para os nomes canônicos de CAMERA_COVARS / espécies.
+# Os nomes de preditores do GJAM carregam um sufixo "Z" (forestZ, savannaZ, ...) e sua
+# própria transformação dos nomes de espécies (make.names sobre o nome científico); mapeie ambos
+# de volta para os nomes canônicos de CAMERA_COVARS / espécies.
 gjam_name_map <- c(forestZ="forest_100m", savannaZ="savanna_100m", pastureZ="pasture_100m",
                     croplandZ="cropland_100m", nvegZ="native_veg_1000m", tempZ="temp_mean_C",
                     precipZ="precip_annual_mm", inPA="in_pa", builtZ="ghsl_built_5000m",
@@ -542,9 +544,9 @@ gjam_bt_hab[, species_clean := species]  # Dot-separated no nome científico já
 species_dotmap <- setNames(species, make.names(species))
 gjam_bt_hab[, species_clean := species_dotmap[species]]
 
-# 1. significância ("sig", uma flag 0/1) calculada de forma uniforme por método: o
-# 2. intervalo de 95% do coeficiente exclui zero (métodos Bayesianos, GJAM), ou
-# 3. p < 0,05 (GLM), ou |beta/se| > 1.96 (Royle-Nichols, que reporta apenas o SE)?
+# significância ("sig", uma flag 0/1) calculada de forma uniforme por método: o
+# intervalo de 95% do coeficiente exclui zero (métodos Bayesianos, GJAM), ou
+# p < 0,05 (GLM), ou |beta/se| > 1.96 (Royle-Nichols, que reporta apenas o SE)?
 all_methods <- rbindlist(list(
   betas[, .(method="Community", species, covariate, mean, sig=as.integer(lcl>0 | ucl<0))],
   glm_out[, .(method="GLM", species, covariate, mean=beta, sig=as.integer(!is.na(p) & p<0.05))],
@@ -673,10 +675,10 @@ p_gjam_imp <- ggplot(gjam_imp, aes(x=reorder(predictor, frac_species_sig), y=fra
 ggsave(file.path(FIGS_DIR,"m4_gjam_importance.png"), p_gjam_imp, width=8, height=6, dpi=150)
 cat("Saved figs/m4_gjam_importance.png\n")
 
-## 1. ---- 6.1: importância dos preditores entre métodos ----
-## 2. Métrica de importância sem unidade (segue a mesma definição usada no notebook): a
-## 3. porcentagem das 44 espécies com um coeficiente credível/significativamente diferente de zero
-## 4. para cada covariável, segundo o teste de significância próprio de cada método.
+## ---- 6.1: importância dos preditores entre métodos ----
+## Métrica de importância sem unidade (segue a mesma definição usada no notebook): a
+## porcentagem das 44 espécies com um coeficiente credível/significativamente diferente de zero
+## para cada covariável, segundo o teste de significância próprio de cada método.
 imp_by_method <- all_methods[, .(pct_sig=100*mean(sig, na.rm=TRUE)), by=.(method, covariate)]
 p_cross_imp <- ggplot(imp_by_method, aes(x=covariate, y=pct_sig, fill=method)) +
   geom_col(position="dodge") + coord_flip() +

@@ -16,8 +16,10 @@
 ##   final_deployments.csv         -- one row per camera deployment
 ##   final_detections_mammals.csv  -- one row per independent detection event
 ##   final_covariates.csv          -- one row per camera site, remote-sensing covariates
-##   array_covariates.csv          -- one row per camera array, the reduced 6-covariate
-##                                     ARRAY_SET (Module 2/3's array-level design)
+##   array_covariates.csv          -- one row per camera array, the same 11 covariates as
+##                                     final_covariates.csv aggregated to the array level
+##                                     (used only as a reference lookup in this module; the
+##                                     analyses below all run at the camera level)
 ##   species_list.json             -- the 44 species/genera modeled in this module
 ##                                     (>=10 detections, >=20 sites, per Module 3's rule)
 ##   species_range_mask.csv        -- site x species IUCN range mask (1 = candidate,
@@ -92,7 +94,7 @@ set.seed(1)
 dep <- fread(file.path(DATA_DIR, "final_deployments.csv"))
 det <- fread(file.path(DATA_DIR, "final_detections_mammals.csv"))
 cov <- fread(file.path(DATA_DIR, "final_covariates.csv"))
-arr_cov <- fread(file.path(DATA_DIR, "array_covariates.csv"))
+arr_cov <- fread(file.path(DATA_DIR, "array_covariates.csv"))  # loaded for reference; unused below (this module fits at the camera level)
 
 dep[, start_dt := as.IDate(start_date)]
 dep[, end_dt   := as.IDate(end_date)]
