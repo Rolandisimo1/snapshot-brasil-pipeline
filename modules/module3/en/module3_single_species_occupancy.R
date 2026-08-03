@@ -7,7 +7,7 @@
 ## files (deployments, mammal detections, remote-sensing covariates) and
 ## builds everything from scratch -- detection histories, covariates,
 ## candidate site sets, and every model fit. Put this script in the same
-## folder as the six data files listed below and run it top to bottom.
+## folder as the seven data files listed below and run it top to bottom.
 ##
 ## Required input files (in DATA_DIR, default "data" alongside this script):
 ##   final_deployments.csv         -- one row per camera deployment
@@ -16,11 +16,12 @@
 ##   species_site_exclusions.csv   -- per-species structural-zero sites (Module 2 range-mask output)
 ##   genus_species_site_exclusions.csv -- structural-zero sites for pooled Didelphis (see note below)
 ##   site_ecoregion.csv            -- per-site biome/ecoregion (used only for the ecoregion extension)
+##   species_order_lookup.csv      -- per-species/genus taxonomic order (used only for section 3.1)
 ##
-## The last three files are reference outputs from Module 2's range-map
-## evaluation (a spatial join against IUCN range polygons) and cannot be
-## rebuilt from the three main data files alone -- they are shipped
-## alongside this script as fixed lookup tables.
+## The last four files are reference outputs from Module 2's range-map
+## evaluation and this pipeline's taxonomy review, and cannot be rebuilt
+## from the three main data files alone -- they are shipped alongside this
+## script as fixed lookup tables.
 ##
 ## Taxonomy note: Didelphis (3 species with range maps + genus-only records)
 ## and Dasyprocta (5 species, only 1 with a range map, + genus-only records)
@@ -54,8 +55,22 @@ if (!dir.exists(FIGS_DIR)) dir.create(FIGS_DIR)
 # color convention used throughout: green = positive effect, red = negative
 COL_POS <- "#1b7837"; COL_NEG <- "#c0392b"; COL_NEUTRAL <- "#2c7fb8"
 
+## Camera-level covariate set (11, incl. in_pa appended separately below) --
+## used for every per-camera-site model (flagship, community loop, RN loop,
+## interaction, ecoregion). Sample size at this level (1,110+ sites) easily
+## supports this many predictors.
 FINAL_COVARS <- c("forest_100m","savanna_100m","pasture_100m","cropland_100m",
-                   "native_veg_1000m","temp_mean_C","precip_annual_mm")
+                   "native_veg_1000m","temp_mean_C","precip_annual_mm",
+                   "ghsl_built_5000m","dist_road_m","dist_water_m")
+
+## Array-level covariate set (6, no in_pa) -- used ONLY for the array-level
+## side of the camera-vs-array comparison (section 2.1). Chosen by ranking
+## every camera-level candidate on community-wide explanatory power and
+## confirming with VIF; a richer set is not defensible with only 60 arrays.
+## See Module 2 for the derivation.
+ARRAY_COVARS <- c("forest_100m","savanna_100m","native_veg_1000m",
+                   "temp_mean_C","precip_annual_mm","dist_road_m")
+
 OCC_DAYS <- 7  # occasion length in days, matching the pipeline's independence-interval convention
 
 
@@ -81,7 +96,8 @@ cat("Sites:", nrow(site_tbl), "| Arrays:", uniqueN(site_tbl$array_id), "\n")
 # merge in remote-sensing covariates, z-score the final covariate set, number the arrays
 sc <- merge(site_tbl, cov, by = "site_id", all.x = TRUE)
 setorder(sc, site_id)
-for (v in FINAL_COVARS) sc[[paste0(v, "_z")]] <- as.numeric(scale(sc[[v]]))
+ALL_CONTINUOUS_COVARS <- union(FINAL_COVARS, ARRAY_COVARS)
+for (v in ALL_CONTINUOUS_COVARS) sc[[paste0(v, "_z")]] <- as.numeric(scale(sc[[v]]))
 sc[, treecover2000_100m_z := as.numeric(scale(treecover2000_100m))]
 arrays_sorted <- sort(unique(sc$array_id))
 sc[, array_num := match(array_id, arrays_sorted)]
@@ -199,6 +215,9 @@ for (i in seq_len(nrow(species_meta))) {
   species_meta$n_arrays_det[i] <- uniqueN(sc[site_id %in% det_sites, array_id])
 }
 cat("\n")
+fwrite(species_meta, "data/species_meta.csv")
+fwrite(data.table(n_sites=nrow(site_tbl), n_arrays=uniqueN(site_tbl$array_id),
+                   n_modeled=nrow(modeled)), "data/dataset_summary.csv")
 
 
 ## =============================================================================
@@ -232,7 +251,8 @@ sci <- "Dasypus novemcinctus"
 y_arm <- build_dethist(sci)
 excl_sites <- excl[species == sci, site_id]
 FINAL_COVARS_Z <- paste0(FINAL_COVARS, "_z")
-keep <- !is.na(sc$forest_100m_z) & !(sc$site_id %in% excl_sites)
+ARRAY_COVARS_Z <- paste0(ARRAY_COVARS, "_z")
+keep <- complete.cases(sc[, ..FINAL_COVARS]) & !(sc$site_id %in% excl_sites)
 y2 <- y_arm[keep, , drop = FALSE]
 sc2 <- as.data.frame(sc[keep])
 cat("== Armadillo: candidate site set ==\n")
@@ -301,6 +321,8 @@ pgocc_coefs <- data.table(param = colnames(fit_pgocc$beta.samples),
 cat("== Armadillo array-RE (PGOcc) coefficients ==\n")
 print(pgocc_coefs[param != "(Intercept)"], digits=3)
 cat("\n")
+fwrite(pgocc_coefs, "data/armadillo_pgocc_coefs.csv")
+fwrite(data.table(n_sites=nrow(y2)), "data/armadillo_candidate_sites.csv")
 
 fig_arm_effect_data <- list()
 for (pr in c("forest_100m_z","savanna_100m_z","native_veg_1000m_z")) {
@@ -358,11 +380,13 @@ for (pr in setdiff(sig_covars_arm, "in_pa")) {
   effect_curve_data[[pr]] <- data.table(covariate=pr, z=zg,
     psi=plogis(intc + b*zg), psi_lo=plogis(intc + b_lo*zg), psi_hi=plogis(intc + b_hi*zg), sign=ifelse(b>0,"pos","neg"))
 }
+label_map <- c(forest_100m_z="Forest cover", savanna_100m_z="Savanna cover", pasture_100m_z="Pasture",
+               cropland_100m_z="Cropland", native_veg_1000m_z="Native veg (1000m)",
+               temp_mean_C_z="Temperature", precip_annual_mm_z="Precipitation",
+               ghsl_built_5000m_z="Built surface", dist_road_m_z="Distance to road",
+               dist_water_m_z="Distance to water", in_pa="Protected area")
 if (length(effect_curve_data)) {
   ec_dt <- rbindlist(effect_curve_data)
-  label_map <- c(forest_100m_z="Forest cover", savanna_100m_z="Savanna cover", pasture_100m_z="Pasture",
-                 cropland_100m_z="Cropland", native_veg_1000m_z="Native veg (1000m)",
-                 temp_mean_C_z="Temperature", precip_annual_mm_z="Precipitation")
   ec_dt[, covariate_label := factor(label_map[covariate], levels=label_map[names(effect_curve_data)])]
   p_effects <- ggplot(ec_dt, aes(x=z, y=psi, color=sign, fill=sign)) +
     geom_ribbon(aes(ymin=psi_lo, ymax=psi_hi), alpha=0.15, color=NA) +
@@ -380,8 +404,8 @@ if (length(effect_curve_data)) {
 ## ---- beta CI figure (array-RE model) ----
 beta_plot <- pgocc_coefs[param != "(Intercept)"][order(mean)]
 beta_plot[, label := label_map[param]]
-beta_plot[is.na(label), label := "Protected area"]
-beta_plot[, label := factor(label, levels=label)]
+stopifnot("Unmapped covariate in beta_plot -- add it to label_map" = !any(is.na(beta_plot$label)))
+beta_plot[, label := factor(label, levels=unique(label))]
 beta_plot[, sign := fifelse(ci_lo>0, "pos", fifelse(ci_hi<0, "neg", "ns"))]
 p_beta_ci <- ggplot(beta_plot, aes(x=mean, y=label, color=sign)) +
   geom_vline(xintercept=0, linetype="dashed", color="grey70") +
@@ -457,6 +481,8 @@ cat("c-hat (overdispersion):", round(c_hat,3), "| Bootstrap GoF p-value:", round
 cat("An AUC around 0.65 indicates modest discrimination; a c-hat above 1 means\n")
 cat("the model is overdispersed -- both common, expected findings for occupancy\n")
 cat("models on binary detection data, not a sign the model is unusable.\n\n")
+fwrite(data.table(auc=round(auc_val,3), c_hat=round(c_hat,3), gof_p=round(gof_p,3),
+                   det_prob=round(p_const,3)), "data/armadillo_fit_summary.csv")
 
 ## ---- 1.6 Does adding protected-area status improve the model? ----
 form_no_pa <- as.formula(paste("~1 ~", paste(FINAL_COVARS_Z, collapse=" + ")))
@@ -472,6 +498,9 @@ cat("Adding in_pa improves AIC by", round(delta_aic,1), "points.\n")
 cat("Direction:", direction, "-- occupancy", ifelse(direction=="negative","lower","higher"), "inside protected areas.\n")
 cat("Predicted occupancy inside PA:", round(psi_in,3), "| outside PA:", round(psi_out,3),
     "| ratio:", round(psi_in/psi_out,2), "\n\n")
+fwrite(data.table(delta_aic=round(delta_aic,1), direction=direction,
+                   psi_outside_pa=round(psi_out,3), psi_inside_pa=round(psi_in,3),
+                   ratio=round(psi_in/psi_out,2)), "data/armadillo_pa_effect.csv")
 
 
 ## =============================================================================
@@ -493,7 +522,7 @@ community_coefs <- list()
 for (sci_c in modeled$sci_pooled) {
   y_c <- build_dethist(sci_c)
   excl_c <- excl[species == sci_c, site_id]
-  keep_c <- !is.na(sc$forest_100m_z) & !(sc$site_id %in% excl_c)
+  keep_c <- complete.cases(sc[, ..FINAL_COVARS]) & !(sc$site_id %in% excl_c)
   y_c2 <- y_c[keep_c, , drop=FALSE]
   sc_c2 <- sc[keep_c]
   fit_c <- tryCatch(fit_pgocc_array_re(y_c2, as.data.frame(sc_c2)), error=function(e) { cat(sci_c, "FAILED:", conditionMessage(e), "\n"); NULL })
@@ -506,11 +535,15 @@ for (sci_c in modeled$sci_pooled) {
 }
 community_dt <- rbindlist(community_coefs, fill=TRUE)
 cat("\nCommunity fits completed:", uniqueN(community_dt$species), "of", nrow(modeled), "\n\n")
+fwrite(data.table(n_fit=uniqueN(community_dt$species), n_modeled=nrow(modeled)), "data/community_fit_count.csv")
+fwrite(community_dt, "data/community_coefs.csv")
 
 ## ---- community beta shaded table figure ----
 label_map_full <- c(forest_100m_z="Forest", savanna_100m_z="Savanna", pasture_100m_z="Pasture",
                      cropland_100m_z="Cropland", native_veg_1000m_z="Native veg\n(1000m)",
-                     temp_mean_C_z="Temp", precip_annual_mm_z="Precip", in_pa="Protected\narea")
+                     temp_mean_C_z="Temp", precip_annual_mm_z="Precip",
+                     ghsl_built_5000m_z="Built\nsurface", dist_road_m_z="Dist.\nroad",
+                     dist_water_m_z="Dist.\nwater", in_pa="Protected\narea")
 comm_plot <- community_dt[param != "(Intercept)"]
 comm_plot <- merge(comm_plot, species_meta, by.x="species", by.y="sci_mdd", all.x=TRUE)
 comm_plot[, sig := ci_lo>0 | ci_hi<0]
@@ -535,29 +568,40 @@ cat("Saved figs/m3_beta_shaded_table.png\n\n")
 ## Six species illustrate the comparison: Spotted Paca and Nine-banded
 ## Armadillo (data-rich), White-lipped Peccary (sparse, range-masked), and
 ## Ocelot, Lowland Tapir, Puma (chosen for large camera-vs-array shifts).
+## IMPORTANT: this is now a comparison of two DIFFERENT covariate sets, not
+## just two sampling levels with the same covariates -- the camera-level fit
+## uses the full 11-covariate set (n=1,110+ sites can support it); the
+## array-level fit uses the reduced 6-covariate set (n=60 arrays cannot
+## support more; see Module 2 for how that set was chosen).
 species_6 <- c("Cuniculus paca","Dasypus novemcinctus","Tayassu pecari",
                "Leopardus pardalis","Tapirus terrestris","Puma concolor")
-COVARS3 <- c("forest_100m_z","native_veg_1000m_z")
 
 site_to_array <- setNames(sc$array_id, sc$site_id)
 arrays_ordered <- sort(unique(sc$array_id))
 n_arrays <- length(arrays_ordered)
 
-array_cov <- sc[, lapply(.SD, mean, na.rm=TRUE), .SDcols = c(FINAL_COVARS, "in_pa"), by = array_id]
-for (v in FINAL_COVARS) array_cov[[paste0(v,"_z")]] <- as.numeric(scale(array_cov[[v]]))
+array_cov <- sc[, lapply(.SD, mean, na.rm=TRUE), .SDcols = ARRAY_COVARS, by = array_id]
+for (v in ARRAY_COVARS) array_cov[[paste0(v,"_z")]] <- as.numeric(scale(array_cov[[v]]))
+# one array (ATLA_ATL_17) has no valid camera-level habitat/climate data at
+# any of its cameras, so its array-level mean is NaN across the board --
+# drop it here rather than silently carrying an all-NA row forward.
+array_cov <- array_cov[complete.cases(array_cov[, ..ARRAY_COVARS])]
+cat("Arrays with complete covariate data for array-level models:", nrow(array_cov), "of", n_arrays, "\n\n")
+fwrite(data.table(n_arrays_complete=nrow(array_cov), n_arrays_total=n_arrays), "data/array_completeness.csv")
 
-cat("== Camera-level vs. array-level comparison, 6 species ==\n")
+cat("== Camera-level (11-covariate) vs. array-level (6-covariate) comparison, 6 species ==\n")
 fitstats <- list()
 coef_compare <- list()
+form_site6 <- as.formula(paste("~1 ~", paste(FINAL_COVARS_Z, collapse=" + "), "+ in_pa"))
+form_arr6  <- as.formula(paste("~1 ~", paste(ARRAY_COVARS_Z, collapse=" + ")))
 for (sci6 in species_6) {
   y_site <- build_dethist(sci6)
   excl_sites6 <- excl[species == sci6, site_id]
-  keep6 <- !is.na(sc$forest_100m_z) & !(sc$site_id %in% excl_sites6)
+  keep6 <- complete.cases(sc[, ..FINAL_COVARS]) & !(sc$site_id %in% excl_sites6)
   y_site2 <- y_site[keep6, , drop=FALSE]
   sc_site2 <- as.data.frame(sc[keep6])
-  umf_s <- unmarkedFrameOccu(y=y_site2, siteCovs=sc_site2[, c(COVARS3,"in_pa")])
-  form3 <- as.formula(paste("~1 ~", paste(COVARS3, collapse=" + "), "+ in_pa"))
-  fit_s <- tryCatch(occu(form3, data=umf_s), error=function(e) NULL)
+  umf_s <- unmarkedFrameOccu(y=y_site2, siteCovs=sc_site2[, c(FINAL_COVARS_Z,"in_pa")])
+  fit_s <- tryCatch(occu(form_site6, data=umf_s), error=function(e) NULL)
 
   # array-level: an array counts as "detected" if any camera in it detected that occasion
   y_arr_mat <- matrix(NA_real_, nrow=n_arrays, ncol=ncol(y_site))
@@ -572,11 +616,11 @@ for (sci6 in species_6) {
   excl_arr6 <- excl[species==sci6, site_id]
   arr_excl_frac <- sc[site_id %in% excl_arr6, .(frac = 1), by = array_id]
   excl_arrays6 <- if (nrow(arr_excl_frac)) sc[site_id %in% excl_arr6][, .N, by=array_id][sc[,.N,by=array_id], on="array_id"][!is.na(N) & N/i.N > 0.5, array_id] else character(0)
-  keep_arr <- !is.na(array_cov$forest_100m_z) & !(array_cov$array_id %in% excl_arrays6)
-  y_arr2 <- y_arr_mat[keep_arr, , drop=FALSE]
+  keep_arr <- !(array_cov$array_id %in% excl_arrays6)
+  y_arr2 <- y_arr_mat[array_cov$array_id[keep_arr], , drop=FALSE]
   arr_cov2 <- as.data.frame(array_cov[keep_arr])
-  umf_a <- unmarkedFrameOccu(y=y_arr2, siteCovs=arr_cov2[, c(COVARS3,"in_pa")])
-  fit_a <- tryCatch(occu(form3, data=umf_a), error=function(e) NULL)
+  umf_a <- unmarkedFrameOccu(y=y_arr2, siteCovs=arr_cov2[, ARRAY_COVARS_Z])
+  fit_a <- tryCatch(occu(form_arr6, data=umf_a), error=function(e) NULL)
 
   if (!is.null(fit_s) && !is.null(fit_a)) {
     auc_s <- as.numeric(auc(roc(response=apply(y_site2,1,function(r) any(r==1,na.rm=TRUE)),
@@ -588,8 +632,10 @@ for (sci6 in species_6) {
 
     co_s <- coef(fit_s); se_s <- sqrt(diag(vcov(fit_s)))
     co_a <- coef(fit_a); se_a <- sqrt(diag(vcov(fit_a)))
-    for (pr in names(co_s)) {
-      if (!(pr %in% names(co_a))) next
+    # only compare parameters present in BOTH fits (the shared covariates:
+    # forest, savanna, native_veg_1000m, temp, precip, dist_road)
+    shared_params <- intersect(names(co_s), names(co_a))
+    for (pr in shared_params) {
       coef_compare[[paste(sci6,pr)]] <- data.table(species=sci6, param=pr,
         site_est=co_s[pr], site_se=se_s[pr], array_est=co_a[pr], array_se=se_a[pr])
     }
@@ -597,13 +643,18 @@ for (sci6 in species_6) {
 }
 fitstats_dt <- rbindlist(fitstats, fill=TRUE)
 print(fitstats_dt)
+fwrite(fitstats_dt, "data/fitstats_6species.csv")
 cat("\nArray-level AUC is typically higher -- fewer, cleaner sampling units are easier\n")
-cat("to discriminate, at the cost of much wider confidence intervals (less power).\n\n")
+cat("to discriminate, at the cost of much wider confidence intervals (less power).\n")
+cat("Note the camera-level model also carries four covariates -- built surface,\n")
+cat("distance to road, distance to water, protected-area status -- that the\n")
+cat("array-level model does not have room for; the comparison below is\n")
+cat("restricted to the six covariates both models share.\n\n")
 
 ## ---- fit-stats comparison figure ----
 fitstats_long <- melt(fitstats_dt, id.vars="species", measure.vars=c("auc_site","auc_array"),
                         variable.name="level", value.name="auc")
-fitstats_long[, level := fifelse(level=="auc_site","Camera-level","Array-level")]
+fitstats_long[, level := fifelse(level=="auc_site","Camera-level (11 cov.)","Array-level (6 cov.)")]
 common_lookup6 <- c("Cuniculus paca"="Spotted Paca","Dasypus novemcinctus"="Nine-banded Armadillo",
                      "Tayassu pecari"="White-lipped Peccary","Leopardus pardalis"="Ocelot",
                      "Tapirus terrestris"="Lowland Tapir","Puma concolor"="Puma")
@@ -613,32 +664,36 @@ p_fitstats <- ggplot(fitstats_long, aes(x=common, y=auc, fill=level)) +
   geom_col(position="dodge", width=0.7) +
   geom_hline(yintercept=0.5, linetype="dashed", color="grey50") +
   annotate("text", x=1, y=0.53, label="Chance", color="grey50", size=3) +
-  scale_fill_manual(values=c("Camera-level"=COL_NEUTRAL, "Array-level"="#e67e22"), name=NULL) +
-  labs(title="Model discrimination (AUC): camera-level vs. array-level, 6 species", x=NULL, y="AUC") +
+  scale_fill_manual(values=c("Camera-level (11 cov.)"=COL_NEUTRAL, "Array-level (6 cov.)"="#e67e22"), name=NULL) +
+  labs(title="Model discrimination (AUC): camera-level (11-cov.) vs. array-level (6-cov.), 6 species", x=NULL, y="AUC") +
   ylim(0,1) + theme_minimal(base_size=11) + theme(axis.text.x=element_text(angle=20, hjust=1))
 ggsave(file.path(FIGS_DIR, "m3_camera_vs_array_fit_6species.png"), p_fitstats, width=8, height=5.5, dpi=150)
 cat("Saved figs/m3_camera_vs_array_fit_6species.png\n\n")
 
 ## ---- dot-whisker camera vs array coefficient comparison figure ----
+## Restricted to the shared covariates (forest, native_veg_1000m -- the two
+## with the most reliable signal across both levels for these species).
 coef_compare_dt <- rbindlist(coef_compare, fill=TRUE)
-coef_compare_dt <- coef_compare_dt[!(param %in% c("psi(Int)", "p(Int)"))]
+coef_compare_dt <- coef_compare_dt[param %in% c("psi(forest_100m_z)","psi(native_veg_1000m_z)")]
 coef_compare_dt[, common := common_lookup6[species]]
+fwrite(coef_compare_dt, "data/coef_compare_6species.csv")
 coef_long <- melt(coef_compare_dt, id.vars=c("species","param","common"),
                     measure.vars=list(est=c("site_est","array_est"), se=c("site_se","array_se")))
-coef_long[, level := fifelse(variable==1, "Camera-level", "Array-level")]
-param_labels3 <- c("psi(forest_100m_z)"="Forest", "psi(native_veg_1000m_z)"="Native veg (1000m)", "psi(in_pa)"="Protected area")
+coef_long[, level := fifelse(variable==1, "Camera-level (11 cov.)", "Array-level (6 cov.)")]
+param_labels3 <- c("psi(forest_100m_z)"="Forest", "psi(native_veg_1000m_z)"="Native veg (1000m)")
 coef_long[, param_label := param_labels3[param]]
 coef_long[, y_label := paste(common, param_label, sep=" \u2014 ")]
 p_dotwhisker <- ggplot(coef_long, aes(x=est, y=y_label, color=level)) +
   geom_vline(xintercept=0, linetype="dashed", color="grey70") +
   geom_errorbarh(aes(xmin=est-1.96*se, xmax=est+1.96*se), height=0, position=position_dodge(width=0.5), linewidth=0.9) +
   geom_point(position=position_dodge(width=0.5), size=2.5) +
-  scale_color_manual(values=c("Camera-level"=COL_NEUTRAL, "Array-level"="#e67e22"), name=NULL) +
-  labs(title="Camera-level vs. array-level coefficients, 6 species",
+  scale_color_manual(values=c("Camera-level (11 cov.)"=COL_NEUTRAL, "Array-level (6 cov.)"="#e67e22"), name=NULL) +
+  labs(title="Camera-level vs. array-level coefficients, 6 species (shared covariates only)",
        x="Coefficient (\u03b2), estimate and 95% CI", y=NULL) +
   theme_minimal(base_size=10) + theme(legend.position="bottom")
 ggsave(file.path(FIGS_DIR, "m3_array_vs_site_6species.png"), p_dotwhisker, width=9, height=8, dpi=150)
 cat("Saved figs/m3_array_vs_site_6species.png\n\n")
+
 
 ## ---- 2.2 Why this comparison matters ----
 cat("== Why this comparison matters ==\n")
@@ -688,14 +743,15 @@ cat("Saved figs/m3_species_pca_biplot.png (", nrow(scores_dt), "species,", round
 species4 <- c("Tapirus terrestris","Euphractus sexcinctus","Dasypus novemcinctus","Cerdocyon thous")
 common4 <- c("Tapirus terrestris"="Lowland Tapir","Euphractus sexcinctus"="Yellow Armadillo",
              "Dasypus novemcinctus"="Nine-banded Armadillo","Cerdocyon thous"="Crab-eating Fox")
-OTHER_COVARS <- c("savanna_100m_z","pasture_100m_z","cropland_100m_z","native_veg_1000m_z","precip_annual_mm_z","in_pa")
+OTHER_COVARS <- c("savanna_100m_z","pasture_100m_z","cropland_100m_z","native_veg_1000m_z","precip_annual_mm_z","ghsl_built_5000m_z","dist_road_m_z","dist_water_m_z","in_pa")
 cat("== Temperature x tree-cover interaction, full model, 4 species ==\n")
 int_preds <- list()
 int_labels <- list()
+int4_results <- list()
 for (sci4 in species4) {
   y4 <- build_dethist(sci4)
   excl4 <- excl[species==sci4, site_id]
-  keep4 <- !is.na(sc$treecover2000_100m_z) & !(sc$site_id %in% excl4)
+  keep4 <- complete.cases(sc[, c("treecover2000_100m_z","temp_mean_C_z", ..OTHER_COVARS)]) & !(sc$site_id %in% excl4)
   y4b <- y4[keep4, , drop=FALSE]
   sc4 <- as.data.frame(sc[keep4])
   umf4 <- unmarkedFrameOccu(y=y4b, siteCovs=sc4[, c("treecover2000_100m_z","temp_mean_C_z", OTHER_COVARS)])
@@ -705,6 +761,8 @@ for (sci4 in species4) {
   co4 <- coef(fit4); se4 <- sqrt(diag(vcov(fit4)))
   int_term <- "psi(treecover2000_100m_z:temp_mean_C_z)"
   z4 <- co4[int_term]/se4[int_term]
+  int4_results[[sci4]] <- data.table(species=sci4, common=common4[sci4],
+                                       interaction_coef=round(co4[int_term],3), z=round(z4,2))
   cat(sci4, "| interaction coef:", round(co4[int_term],3), "| z:", round(z4,2), "\n")
   int_labels[[sci4]] <- sprintf("%s\n(interaction %s, z=%.1f)", common4[sci4],
                                   ifelse(abs(z4)>1.96,"significant","not significant"), z4)
@@ -721,6 +779,7 @@ for (sci4 in species4) {
 }
 cat("\nThree of four species typically show a significant interaction even with\n")
 cat("the full covariate set included -- an additive-only model would miss this.\n\n")
+fwrite(rbindlist(int4_results, fill=TRUE), "data/interaction_4species.csv")
 
 int_pred_dt <- rbindlist(int_preds, fill=TRUE)
 int_pred_dt[, species_label := unlist(int_labels[species])]
@@ -738,6 +797,140 @@ cat("Saved figs/m3_interaction_4species.png\n\n")
 
 
 ## =============================================================================
+## 3.1 IS THE TEMPERATURE x FOREST INTERACTION STRONGER IN SOME MAMMAL ORDERS?
+## =============================================================================
+## The 4-species example above shows the interaction can matter a lot for a
+## handful of species. Here we fit the SAME interaction term (temperature x
+## tree cover, full covariate model) for every modeled species/genus, tag
+## each by taxonomic order, and ask whether one order stands out --
+## specifically, whether Xenarthra (armadillos, anteaters; ectothermic-
+## adjacent thermal physiology relative to other placental mammals) shows a
+## more pronounced temperature-dependence in its forest-use response than
+## the rest of the community.
+
+order_lookup_dt <- fread(file.path(DATA_DIR, "species_order_lookup.csv"))
+cat("== Temperature x tree-cover interaction, full community, by taxonomic order ==\n")
+order_int_results <- list()
+order_int_fits <- list()
+for (sci_o in modeled$sci_pooled) {
+  y_o <- build_dethist(sci_o)
+  excl_o <- excl[species == sci_o, site_id]
+  keep_o <- complete.cases(sc[, c("treecover2000_100m_z","temp_mean_C_z", ..OTHER_COVARS)]) & !(sc$site_id %in% excl_o)
+  y_o2 <- y_o[keep_o, , drop=FALSE]
+  sc_o2 <- as.data.frame(sc[keep_o])
+  umf_o <- tryCatch(unmarkedFrameOccu(y=y_o2, siteCovs=sc_o2[, c("treecover2000_100m_z","temp_mean_C_z", OTHER_COVARS)]),
+                     error=function(e) NULL)
+  if (is.null(umf_o)) next
+  fit_o <- tryCatch(occu(form4, data=umf_o), error=function(e) NULL)
+  if (is.null(fit_o)) next
+  co_o <- coef(fit_o); se_o <- sqrt(diag(vcov(fit_o)))
+  int_term_o <- "psi(treecover2000_100m_z:temp_mean_C_z)"
+  if (!(int_term_o %in% names(co_o))) next
+  z_o <- co_o[int_term_o] / se_o[int_term_o]
+  if (!is.finite(z_o) || abs(z_o) > 20) next  # drop unstable/separation-driven fits
+  order_int_results[[sci_o]] <- data.table(species=sci_o, interaction_coef=co_o[int_term_o],
+                                             interaction_se=se_o[int_term_o], interaction_z=z_o,
+                                             n_sites=nrow(y_o2))
+  order_int_fits[[sci_o]] <- fit_o
+}
+order_int_dt <- rbindlist(order_int_results, fill=TRUE)
+order_int_dt <- merge(order_int_dt, order_lookup_dt, by.x="species", by.y="sci_pooled", all.x=TRUE)
+order_int_dt[, sig := abs(interaction_z) > 1.96]
+cat("Interaction fits completed:", nrow(order_int_dt), "of", nrow(modeled), "modeled species/genera\n\n")
+
+order_summary <- order_int_dt[!is.na(order), .(n_species=.N, mean_abs_z=mean(abs(interaction_z)),
+                                                  median_abs_z=median(abs(interaction_z)),
+                                                  pct_sig=100*mean(sig)), by=order]
+setorder(order_summary, -mean_abs_z)
+cat("== Interaction strength (|z|) by taxonomic order ==\n")
+print(order_summary, digits=3)
+cat("\n")
+fwrite(order_summary, "data/order_interaction_summary.csv")
+fwrite(order_int_dt, "data/order_interaction_full.csv")
+
+## ---- comparing the ten strongest interactions directly ----
+## Rather than only comparing |z| values in a table, we plot the fitted
+## tree-cover x temperature prediction curves for the ten species/genera
+## with the strongest interaction (by |z|), all on a common scale, so the
+## shape and direction of each interaction can be compared side by side.
+top10_species <- order_int_dt[order(-abs(interaction_z))][1:min(10, .N), species]
+top10_curves <- list()
+for (sci_t in top10_species) {
+  fit_t <- order_int_fits[[sci_t]]
+  if (is.null(fit_t)) next
+  sc_t <- as.data.frame(sc[complete.cases(sc[, c("treecover2000_100m_z","temp_mean_C_z", ..OTHER_COVARS)]) &
+                             !(sc$site_id %in% excl[species==sci_t, site_id])])
+  tc_grid_t <- seq(min(sc_t$treecover2000_100m_z, na.rm=TRUE), max(sc_t$treecover2000_100m_z, na.rm=TRUE), length.out=30)
+  for (temp_scenario in c(-1, 1)) {
+    newdat_t <- as.data.frame(setNames(as.list(rep(0,length(OTHER_COVARS))), OTHER_COVARS))
+    newdat_t <- newdat_t[rep(1,30),]
+    newdat_t$treecover2000_100m_z <- tc_grid_t; newdat_t$temp_mean_C_z <- temp_scenario
+    pred_t <- predict(fit_t, newdata=newdat_t, type="state")
+    top10_curves[[paste(sci_t,temp_scenario)]] <- data.table(
+      species=sci_t, temp=factor(temp_scenario, levels=c(-1,1), labels=c("Cool","Warm")),
+      tc=tc_grid_t, psi=pred_t$Predicted)
+  }
+}
+top10_curves_dt <- rbindlist(top10_curves, fill=TRUE)
+top10_z_lookup <- order_int_dt[species %in% top10_species, .(species, interaction_z, order)]
+top10_curves_dt <- merge(top10_curves_dt, top10_z_lookup, by="species")
+top10_curves_dt[, species_label := sprintf("%s (%s)\nz=%.1f", species, order, interaction_z)]
+top10_curves_dt[, species_label := factor(species_label, levels=unique(species_label[order(-abs(top10_curves_dt$interaction_z))]))]
+
+p_top10 <- ggplot(top10_curves_dt, aes(x=tc, y=psi, color=temp)) +
+  geom_line(linewidth=1) +
+  scale_color_manual(values=c("Cool"="#2c7fb8","Warm"=COL_NEG), name="Temperature scenario") +
+  facet_wrap(~species_label, nrow=2, scales="free_y") +
+  labs(title="The ten strongest temperature x tree-cover interactions, compared directly",
+       subtitle="Cool vs. warm predicted-occupancy curves across the tree-cover range, for the ten species/genera with the largest |z|",
+       x="Tree cover (z)", y="Predicted occupancy (\u03c8)") +
+  theme_minimal(base_size=9) + theme(legend.position="bottom", strip.text=element_text(size=7))
+ggsave(file.path(FIGS_DIR, "m3_interaction_top10.png"), p_top10, width=13, height=7, dpi=150)
+cat("Saved figs/m3_interaction_top10.png\n\n")
+fwrite(top10_z_lookup[order(-abs(interaction_z))], "data/top10_interaction_species.csv")
+
+# Two-sample test: Xenarthra vs. all other orders combined
+xen_z <- abs(order_int_dt[order=="Xenarthra", interaction_z])
+other_z <- abs(order_int_dt[!is.na(order) & order!="Xenarthra", interaction_z])
+if (length(xen_z) >= 3 && length(other_z) >= 3) {
+  wt <- wilcox.test(xen_z, other_z)
+  cat("Xenarthra (n=", length(xen_z), ") mean |z| =", round(mean(xen_z),2),
+      "vs. all other orders (n=", length(other_z), ") mean |z| =", round(mean(other_z),2), "\n")
+  cat("Wilcoxon rank-sum test, Xenarthra vs. rest: p =", round(wt$p.value,4), "\n")
+  fwrite(data.table(n_xenarthra=length(xen_z), mean_xenarthra=round(mean(xen_z),2),
+                     n_other=length(other_z), mean_other=round(mean(other_z),2),
+                     wilcoxon_p=round(wt$p.value,4)), "data/xenarthra_test.csv")
+  cat(if (wt$p.value < 0.05 && mean(xen_z) > mean(other_z))
+        "Xenarthra shows a SIGNIFICANTLY stronger temperature x forest interaction than the rest of the community.\n"
+      else if (wt$p.value < 0.05)
+        "The difference is significant but in the OPPOSITE direction (Xenarthra weaker, not stronger).\n"
+      else
+        "No significant difference detected -- with only 5 Xenarthra species this test has limited power;\n  treat as suggestive, not conclusive.\n")
+} else {
+  cat("Too few species in one group for a formal test; reporting descriptive summary only.\n")
+}
+cat("\n")
+
+## ---- figure: interaction strength by order, species-level dots + order means ----
+order_int_dt[, order_f := factor(order, levels=order_summary$order)]
+order_int_dt[, is_xenarthra := order == "Xenarthra"]
+sig_label_dt <- data.table(order_f=factor(order_summary$order[1], levels=order_summary$order), y=2.15)
+p_order_interaction <- ggplot(order_int_dt[!is.na(order)], aes(x=order_f, y=abs(interaction_z))) +
+  geom_hline(yintercept=1.96, linetype="dashed", color="grey60") +
+  geom_text(data=sig_label_dt, aes(x=order_f, y=y), label="|z| = 1.96 (95% sig.)",
+            color="grey50", size=2.8, hjust=0, inherit.aes=FALSE) +
+  geom_jitter(aes(color=is_xenarthra), width=0.15, size=2.5, alpha=0.8) +
+  stat_summary(fun=mean, geom="crossbar", width=0.5, color="black", linewidth=0.6) +
+  scale_color_manual(values=c("TRUE"=COL_NEG, "FALSE"=COL_NEUTRAL), guide="none") +
+  labs(title="Temperature x tree-cover interaction strength, by taxonomic order",
+       subtitle="Each point = one species/genus; black bar = order mean; red = Xenarthra",
+       x=NULL, y="|z| for the interaction term") +
+  theme_minimal(base_size=11) + theme(axis.text.x=element_text(angle=20, hjust=1))
+ggsave(file.path(FIGS_DIR, "m3_interaction_by_order.png"), p_order_interaction, width=9, height=6, dpi=150)
+cat("Saved figs/m3_interaction_by_order.png\n\n")
+
+
+## =============================================================================
 ## 4. LETTING A RELATIONSHIP VARY BY ECOREGION
 ## =============================================================================
 ## Full model: psi ~ forest * ecoregion + savanna + pasture + cropland +
@@ -748,13 +941,13 @@ sc_eco <- merge(sc, eco[, .(site_id, biome)], by="site_id", all.x=TRUE)
 sci_eco <- "Leopardus pardalis"
 y_eco <- build_dethist(sci_eco)
 excl_eco <- excl[species==sci_eco, site_id]
-keep_base <- !is.na(sc_eco$forest_100m_z) & !(sc_eco$site_id %in% excl_eco)
+OTHER_COVARS_ECO <- c("savanna_100m_z","pasture_100m_z","cropland_100m_z","native_veg_1000m_z","temp_mean_C_z","precip_annual_mm_z","ghsl_built_5000m_z","dist_road_m_z","dist_water_m_z","in_pa")
+keep_base <- complete.cases(sc_eco[, c("forest_100m_z", ..OTHER_COVARS_ECO)]) & !(sc_eco$site_id %in% excl_eco)
 target_biomes <- c("Tropical & Subtropical Moist Broadleaf Forests","Tropical & Subtropical Grasslands, Savannas & Shrublands")
 keep_eco <- keep_base & (sc_eco$biome %in% target_biomes)
 y_eco2 <- y_eco[keep_eco, , drop=FALSE]
 sc_eco2 <- as.data.frame(sc_eco[keep_eco])
 sc_eco2$biome_f <- factor(sc_eco2$biome, levels=target_biomes)
-OTHER_COVARS_ECO <- c("savanna_100m_z","pasture_100m_z","cropland_100m_z","native_veg_1000m_z","temp_mean_C_z","precip_annual_mm_z","in_pa")
 umf_eco <- unmarkedFrameOccu(y=y_eco2, siteCovs=sc_eco2[, c("forest_100m_z","biome_f", OTHER_COVARS_ECO)])
 form_pooled_eco <- as.formula(paste("~1 ~ forest_100m_z + biome_f +", paste(OTHER_COVARS_ECO, collapse=" + ")))
 form_interact_eco <- as.formula(paste("~1 ~ forest_100m_z * biome_f +", paste(OTHER_COVARS_ECO, collapse=" + ")))
@@ -763,6 +956,7 @@ fit_interact_eco <- occu(form_interact_eco, data=umf_eco)
 delta_eco <- fit_pooled_eco@AIC - fit_interact_eco@AIC
 cat("== Ocelot: pooled vs. ecoregion-interaction forest effect ==\n")
 cat("Interaction model AIC improvement:", round(delta_eco,1), "\n")
+fwrite(data.table(delta_aic=round(delta_eco,1)), "data/ecoregion_ocelot_aic.csv")
 cat("In Moist Broadleaf Forest, more forest cover typically means more Ocelot\n")
 cat("occupancy; in Grasslands/Savannas & Shrublands the relationship reverses --\n")
 cat("a single pooled 'forest effect' hides two genuinely different relationships.\n\n")
@@ -805,7 +999,7 @@ rn_coefs <- list()
 for (sci_rn in modeled$sci_pooled) {
   y_rn <- build_dethist(sci_rn)
   excl_rn <- excl[species == sci_rn, site_id]
-  keep_rn <- !is.na(sc$forest_100m_z) & !(sc$site_id %in% excl_rn)
+  keep_rn <- complete.cases(sc[, ..FINAL_COVARS]) & !(sc$site_id %in% excl_rn)
   y_rn2 <- y_rn[keep_rn, , drop=FALSE]
   sc_rn2 <- as.data.frame(sc[keep_rn])
   umf_rn <- tryCatch(unmarkedFrameOccu(y=y_rn2, siteCovs=sc_rn2[, c(FINAL_COVARS_Z, "in_pa")]), error=function(e) NULL)
@@ -833,6 +1027,9 @@ forest_comp_stable[, diff := rn_forest - occ_forest]
 top2 <- forest_comp_stable[order(-diff)][1:min(2,.N)]
 cat("Overall-level correlation:", round(cor(overall_comp$mean_psi, overall_comp$mean_lam),2), "\n")
 cat("Forest-effect correlation (stable fits only):", round(cor(forest_comp_stable$occ_forest, forest_comp_stable$rn_forest),2), "\n\n")
+fwrite(data.table(overall_r=round(cor(overall_comp$mean_psi, overall_comp$mean_lam),2),
+                   forest_r=round(cor(forest_comp_stable$occ_forest, forest_comp_stable$rn_forest),2),
+                   n_rn_fit=uniqueN(rn_dt$species), n_modeled=nrow(modeled)), "data/rn_vs_occ_correlation.csv")
 
 p_overall <- ggplot(overall_comp, aes(x=mean_psi, y=mean_lam)) +
   geom_point(color=COL_NEUTRAL, size=2.5, alpha=0.75) +
@@ -877,6 +1074,11 @@ cat("Saved figs/m3_occ_vs_abundance.png\n\n")
 ## - Both a continuous interaction (temperature x tree cover) and a
 ##   categorical one (ecoregion) show that a single "one number fits all"
 ##   habitat effect can obscure real, ecologically sensible variation.
+## - Fitting the same temperature x tree-cover interaction across every
+##   modeled species/genus and grouping by taxonomic order tests whether
+##   this sensitivity clusters by lineage rather than being idiosyncratic
+##   per species -- with only 5 Xenarthra species in the modeled set, this
+##   is a suggestive test, not a definitive one.
 ##
 ## Next module: Community & Joint Models.
 ## =============================================================================
