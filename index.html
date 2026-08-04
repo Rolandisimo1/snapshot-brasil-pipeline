@@ -395,9 +395,68 @@
     </details>
   </section>
 
-  <section class="module" style="opacity:0.55;">
-    <h2>Module 7 <span class="status pending">in progress</span></h2>
-    <p>Temporal analysis. Posted once final revisions are complete.</p>
+  <section class="module">
+    <h2>Module 7 — Temporal Interactions <span class="status">ready</span></h2>
+    <p>Occupancy and abundance-mediated interactions say nothing about <em>when</em> animals are
+       active. This module tests two temporal signals: diel-activity overlap (do a driver and a
+       native species share the same hours of day?) and time-since-event hazard models (does a
+       native's detection rate change in the days after a human or dog passes the same camera?).
+       A feasibility check runs first &mdash; humans and dogs clear the bar for a well-distributed
+       hazard-model pair (cattle do not, every candidate responder sits at a single location) &mdash;
+       followed by two worked teaching examples at a single camera array each (South American Coati
+       at Piracicaba; Dog&rarr;Spotted Paca at a Wildlife Insights subproject), then the
+       network-wide pooled hazard fit, plus extended activity axes (human-pressure nocturnality
+       shift, wet vs. dry season, lunar illumination) and a check for whether jaguar presence and
+       ambient temperature interact in shaping Collared Peccary activity. A parallel screen of
+       predator-driven pairs (jaguar, puma, ocelot as drivers) was run on the expanded dataset and
+       found no significant network-wide hazard effect &mdash; consistent with this module's own
+       stated skepticism about statistical power at this scale &mdash; and is intentionally left out
+       of the final report.</p>
+    <div class="dl-grid">
+      <div class="dl-col">
+        <h4>English</h4>
+        <a class="dl-btn" href="modules/module7/en/module7_temporal_pamm.html">
+          <span><span class="fmt">HTML</span> rendered report</span><span class="size">5.2 MB &middot; view</span>
+        </a>
+        <a class="dl-btn" href="modules/module7/en/module7_temporal_pamm.R" download>
+          <span><span class="fmt">R</span> script</span><span class="size">26 KB &middot; download</span>
+        </a>
+        <a class="dl-btn" href="modules/module7/en/module7_data.zip" download>
+          <span><span class="fmt">ZIP</span> input data</span><span class="size">91 KB &middot; download</span>
+        </a>
+      </div>
+      <div class="dl-col">
+        <h4>Português</h4>
+        <a class="dl-btn" href="modules/module7/pt/module7_temporal_pamm_pt.html">
+          <span><span class="fmt">HTML</span> relatório renderizado</span><span class="size">5.2 MB &middot; ver</span>
+        </a>
+        <a class="dl-btn" href="modules/module7/pt/module7_temporal_pamm_pt.R" download>
+          <span><span class="fmt">R</span> script</span><span class="size">29 KB &middot; baixar</span>
+        </a>
+        <a class="dl-btn" href="modules/module7/pt/module7_data.zip" download>
+          <span><span class="fmt">ZIP</span> dados de entrada</span><span class="size">91 KB &middot; baixar</span>
+        </a>
+      </div>
+    </div>
+    <details style="margin-top:1rem;">
+      <summary style="cursor:pointer; font-weight:600;">Figures produced by this script (14)</summary>
+      <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(220px,1fr)); gap:0.75rem; margin-top:0.75rem;">
+        <img src="modules/module7/en/figs/temporal_feasibility.png" alt="Diel-overlap and hazard-model feasibility: which species clear the bar for each analysis" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module7/en/figs/activity_stack_overall.png" alt="Total daily activity, all 44 modelled species stacked by taxonomic order" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module7/en/figs/activity_stack_bygroup.png" alt="Total daily activity by the four PCA habitat-community groups" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module7/en/figs/activity_stack_bybiome.png" alt="Total daily activity by biome (moist forest, cerrado, dry forest, flooded grassland)" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module7/en/figs/activity_overlap_dog.png" alt="Diel activity overlap: Domestic Dog vs three native species" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module7/en/figs/activity_overlap_felids.png" alt="Diel activity overlap between the two dominant felids" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module7/en/figs/pamm_human.png" alt="Time-since-human hazard ratios, four focal native species, network-wide" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module7/en/figs/pamm_coati.png" alt="Worked example: Human to South American Coati detection-rate signal, localized to one camera at Piracicaba" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module7/en/figs/pamm_dog_paca.png" alt="Worked example: Spotted Paca detection rate vs days since a dog passed the camera" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module7/en/figs/human_nocturnality.png" alt="Shift in nocturnal-activity fraction under high vs low human pressure" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module7/en/figs/seasonal_shift.png" alt="Shift in nocturnal-activity fraction, wet vs dry season" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module7/en/figs/lunar_effect.png" alt="Lunar illumination effect on activity, strongly-nocturnal species" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module7/en/figs/peccary_jaguar_diel_contrast.png" alt="Collared Peccary diel activity contrast: jaguar present vs absent" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module7/en/figs/peccary_jaguar_temp_2x2.png" alt="Collared Peccary activity across jaguar presence x temperature, 2x2 design" loading="lazy" style="width:100%; border-radius:4px;">
+      </div>
+    </details>
   </section>
 
   <div class="data-block">
@@ -709,9 +768,70 @@
     </details>
   </section>
 
-  <section class="module" style="opacity:0.55;">
-    <h2>Módulo 7 <span class="status pending">em andamento</span></h2>
-    <p>Análise temporal. Publicado assim que as revisões finais estiverem completas.</p>
+  <section class="module">
+    <h2>Módulo 7 — Interações Temporais <span class="status">pronto</span></h2>
+    <p>Ocupação e interações mediadas pela abundância não dizem nada sobre <em>quando</em> os
+       animais estão ativos. Este módulo testa dois sinais temporais: sobreposição de atividade
+       diária (um driver e uma espécie nativa compartilham as mesmas horas do dia?) e modelos de
+       risco de tempo desde o evento (a taxa de detecção de uma nativa muda nos dias após um
+       humano ou cão passar pela mesma câmera?). Uma checagem de viabilidade roda primeiro &mdash;
+       humanos e cães ultrapassam a barra para um par bem distribuído no modelo de risco (o gado
+       não, todo respondente candidato está concentrado em um único local) &mdash; seguida por dois
+       exemplos didáticos trabalhados, cada um em um único array de câmeras (Quati em Piracicaba;
+       Cão&rarr;Paca em um subprojeto do Wildlife Insights), depois o ajuste de risco agrupado em
+       toda a rede, além de eixos de atividade estendidos (mudança de noturnidade sob pressão
+       humana, estação chuvosa vs. seca, iluminação lunar) e uma checagem se a presença de
+       onça-pintada e a temperatura ambiente interagem ao moldar a atividade do Cateto. Uma
+       triagem paralela de pares conduzidos por predadores (onça-pintada, onça-parda e
+       jaguatirica como drivers) foi rodada no conjunto de dados expandido e não encontrou efeito
+       de risco significativo em toda a rede &mdash; consistente com o próprio ceticismo declarado
+       deste módulo quanto ao poder estatístico nesta escala &mdash; e é intencionalmente deixada de
+       fora do relatório final.</p>
+    <div class="dl-grid">
+      <div class="dl-col">
+        <h4>English</h4>
+        <a class="dl-btn" href="modules/module7/en/module7_temporal_pamm.html">
+          <span><span class="fmt">HTML</span> rendered report</span><span class="size">5.2 MB &middot; view</span>
+        </a>
+        <a class="dl-btn" href="modules/module7/en/module7_temporal_pamm.R" download>
+          <span><span class="fmt">R</span> script</span><span class="size">26 KB &middot; download</span>
+        </a>
+        <a class="dl-btn" href="modules/module7/en/module7_data.zip" download>
+          <span><span class="fmt">ZIP</span> input data</span><span class="size">91 KB &middot; download</span>
+        </a>
+      </div>
+      <div class="dl-col">
+        <h4>Português</h4>
+        <a class="dl-btn" href="modules/module7/pt/module7_temporal_pamm_pt.html">
+          <span><span class="fmt">HTML</span> relatório renderizado</span><span class="size">5.2 MB &middot; ver</span>
+        </a>
+        <a class="dl-btn" href="modules/module7/pt/module7_temporal_pamm_pt.R" download>
+          <span><span class="fmt">R</span> script</span><span class="size">29 KB &middot; baixar</span>
+        </a>
+        <a class="dl-btn" href="modules/module7/pt/module7_data.zip" download>
+          <span><span class="fmt">ZIP</span> dados de entrada</span><span class="size">91 KB &middot; baixar</span>
+        </a>
+      </div>
+    </div>
+    <details style="margin-top:1rem;">
+      <summary style="cursor:pointer; font-weight:600;">Figuras produzidas por este script (14)</summary>
+      <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(220px,1fr)); gap:0.75rem; margin-top:0.75rem;">
+        <img src="modules/module7/pt/figs/temporal_feasibility.png" alt="Viabilidade de sobreposição diária e de modelo de risco: quais espécies ultrapassam a barra para cada análise" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module7/pt/figs/activity_stack_overall.png" alt="Atividade diária total, todas as 44 espécies modeladas empilhadas por ordem taxonômica" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module7/pt/figs/activity_stack_bygroup.png" alt="Atividade diária total pelos quatro grupos de comunidade de habitat da PCA" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module7/pt/figs/activity_stack_bybiome.png" alt="Atividade diária total por bioma (mata úmida, cerrado, mata seca, campo alagado)" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module7/pt/figs/activity_overlap_dog.png" alt="Sobreposição de atividade diária: Cão doméstico vs três espécies nativas" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module7/pt/figs/activity_overlap_felids.png" alt="Sobreposição de atividade diária entre os dois felinos dominantes" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module7/pt/figs/pamm_human.png" alt="Razões de risco de tempo desde o humano, quatro espécies nativas focais, em toda a rede" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module7/pt/figs/pamm_coati.png" alt="Exemplo trabalhado: sinal de detecção de Humano para Quati, localizado em uma câmera em Piracicaba" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module7/pt/figs/pamm_dog_paca.png" alt="Exemplo trabalhado: taxa de detecção da Paca vs dias desde a passagem de um cão" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module7/pt/figs/human_nocturnality.png" alt="Mudança na fração de atividade noturna sob alta vs baixa pressão humana" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module7/pt/figs/seasonal_shift.png" alt="Mudança na fração de atividade noturna, estação chuvosa vs seca" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module7/pt/figs/lunar_effect.png" alt="Efeito da iluminação lunar na atividade, espécies fortemente noturnas" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module7/pt/figs/peccary_jaguar_diel_contrast.png" alt="Contraste de atividade diária do Cateto: onça-pintada presente vs ausente" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module7/pt/figs/peccary_jaguar_temp_2x2.png" alt="Atividade do Cateto entre presença de onça-pintada x temperatura, desenho 2x2" loading="lazy" style="width:100%; border-radius:4px;">
+      </div>
+    </details>
   </section>
 
   <div class="data-block">
