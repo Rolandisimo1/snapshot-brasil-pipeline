@@ -41,7 +41,7 @@
   }
 
   * { box-sizing: border-box; }
-  body { margin: 0; }
+  body { margin: 0; color: #0b0b0b; }
   .viz-root { background: var(--page); min-height: 100vh; padding: 28px 20px 60px; }
   .wrap { max-width: 1320px; margin: 0 auto; }
 
@@ -70,10 +70,11 @@
     font-family: inherit; font-size: 13.5px; color: var(--text-primary); background: var(--surface-1);
     border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; min-width: 240px;
   }
+  select option { color: #0b0b0b; background: #ffffff; }
   select#speciesSelect { min-width: 340px; }
   .note-inline { font-size: 12px; color: var(--text-muted); }
 
-  .layout-map { display: grid; grid-template-columns: 1.4fr 1fr; gap: 18px; align-items: start; }
+  .layout-map { display: grid; grid-template-columns: minmax(0,1.4fr) minmax(0,1fr); gap: 18px; align-items: start; }
   @media (max-width: 900px) { .layout-map { grid-template-columns: 1fr; } }
 
   .panel { background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
@@ -90,13 +91,13 @@
     max-width: 220px; z-index: 10; line-height: 1.4;
   }
 
-  table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
-  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); }
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; color: var(--text-primary); }
+  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); color: var(--text-primary); white-space: nowrap; }
   th { color: var(--text-muted); font-weight: 600; cursor: pointer; user-select: none; white-space: nowrap; }
   th:hover { color: var(--text-primary); }
   td.num, th.num { text-align: right; }
   tr:hover td { background: var(--series-1-wash); }
-  .scroll-table { max-height: 520px; overflow-y: auto; }
+  .scroll-table { max-height: 520px; overflow-y: auto; overflow-x: auto; }
   .badge { display: inline-block; padding: 1px 7px; border-radius: 10px; font-size: 10.5px; font-weight: 600; }
   .badge-mammal { background: rgba(42,120,214,0.14); color: var(--series-1); }
   .badge-bird { background: rgba(214,130,42,0.14); color: var(--series-2); }
