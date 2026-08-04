@@ -149,14 +149,35 @@ for (i in seq_along(species)) {
   }
   keep <- colSums(!is.na(y)) > 0; y <- y[, keep, drop = FALSE]
   naive <- sum(rowSums(y, na.rm = TRUE) > 0)
-  if (naive < 3) { arr_fitsum[[sci]] <- data.frame(species=sci, converged=FALSE, note="too_few"); next }
+  ## A model with 7 state parameters (intercept + 6 covariates) cannot be
+  ## identified from fewer occupied arrays than it has parameters. Screening this
+  ## BEFORE fitting is the honest gate: a fit on 5 occupied arrays can still
+  ## return finite, plausible-looking SEs while a single array's removal moves a
+  ## coefficient by hundreds of logit units.
+  N_STATE <- length(ARRAY_COVARS) + 1L
+  if (naive <= N_STATE) {
+    arr_fitsum[[sci]] <- data.frame(species=sci, converged=FALSE,
+                                    note=sprintf("too_few_occupied (%d occupied <= %d state params)",
+                                                 naive, N_STATE)); next
+  }
   umf <- tryCatch(unmarkedFrameOccu(y = y, siteCovs = Xz_arr_df), error = function(e) NULL)
   m <- tryCatch(occu(occ_form, umf), error = function(e) NULL)
   if (is.null(m) || is.na(logLik(m))) { arr_fitsum[[sci]] <- data.frame(species=sci, converged=FALSE, note="failed"); next }
   se <- SE(m, type = "state")
-  unstable <- any(se > 5, na.rm = TRUE)
+  ## An undefined (NA/NaN/Inf) SE means the Hessian was singular at the optimum --
+  ## the likelihood is flat in some direction and NO unique estimate exists. That
+  ## is the WORST case, not a missing value, so it must fail the screen. The
+  ## earlier `any(se > 5, na.rm = TRUE)` silently dropped those NAs and passed
+  ## exactly the unidentifiable fits it was meant to catch (Jaguar shipped this
+  ## way with 6 of 7 SEs undefined and the highest array-level AUC in the set).
+  n_se_bad <- sum(!is.finite(se))
+  unstable <- n_se_bad > 0 || any(se > 5)
   arr_coefs[[sci]] <- coef(m, type = "state")
-  arr_fitsum[[sci]] <- data.frame(species=sci, converged=TRUE, unstable_se=unstable, note="ok")
+  arr_fitsum[[sci]] <- data.frame(species=sci, converged=TRUE, unstable_se=unstable,
+                                  n_se_undefined=n_se_bad,
+                                  max_se_state=if (all(!is.finite(se))) NA_real_ else max(se[is.finite(se)]),
+                                  naive_occupied=naive,
+                                  note=if (unstable) "unstable" else "ok")
   ps <- predict(m, type = "state")$Predicted
   arr_psi_pred[[sci]] <- data.frame(species=sci, array_id=rownames(Xz_arr_df), psi=ps,
                                      detected = as.integer(rowSums(y, na.rm=TRUE) > 0))
