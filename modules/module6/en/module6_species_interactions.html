@@ -2442,7 +2442,7 @@ Figure 1: How each responder’s fitted abundance changes with driver abundance
 </div>
 </div>
 <p>Two pairs from the original camera-level a-priori list — Jaguar→White-lipped Peccary and Jaguar→Collared Peccary — are <strong>not</strong> shown here: at array level their point estimates keep the same negative direction seen at camera level, but the 95% credible intervals widen enough to cross zero (White-lipped Peccary: -5.17 to 2.07; Collared Peccary: -1.24 to 0.42). This is the same power-loss pattern documented throughout this module’s camera-vs-array comparison — 60 spatial replicates carry less information than several hundred cameras — and it is a real, if disappointing, consequence of the aggregation rather than an error in either fit.</p>
-<p><strong>A caveat on two of the seven curves.</strong> The model links the responder’s log-abundance to the driver’s <em>raw</em> abundance (<code>γ0 · N_driver</code>, not <code>γ0 · log(N_driver)</code>), so the effect compounds exponentially rather than linearly as driver abundance rises. Four of the 7 pairs never push the fitted responder past a plausible ceiling (500 individuals/array) anywhere in the observed range, and one more (Lowland Tapir→White-lipped Peccary) only does so for 4 of 60 arrays. For <strong>Ocelot→Azara’s Agouti</strong> and <strong>Crab-eating Fox→Crab-eating Raccoon</strong>, however, more than half the arrays (34 and 39 of 60) push the fitted responder abundance past any biologically plausible value once the driver’s own abundance climbs — a property of this particular functional form at these particular coefficient magnitudes, not a data error. The capped, log-scaled curves shown here are the right way to <em>display</em> that pattern; they should not be read as precise abundance predictions above roughly the observed driver range. The <strong>direction and significance</strong> of all interactions (from the actual MCMC posterior, not from this post-hoc curve) are unaffected.</p>
+<p><strong>A caveat on two of the seven curves.</strong> In this model, each extra individual of the driver species adds the <em>same fixed amount</em> to the responder’s abundance on the log scale — which means on the natural scale, the responder’s predicted abundance doesn’t just go up steadily as the driver gets more common, it compounds like interest on a loan. Add a few more driver individuals and the prediction can rocket upward rather than climb steadily. For most pairs this never matters in practice, because no array has enough of the driver species to reach that runaway range: four of the 7 pairs never push the fitted responder past a plausible ceiling (500 individuals/array) anywhere in the observed data, and one more (Lowland Tapir→White-lipped Peccary) only does so for 4 of the 60 arrays. For <strong>Ocelot→Azara’s Agouti</strong> and <strong>Crab-eating Fox→Crab-eating Raccoon</strong>, though, more than half of the 60 arrays (34 and 39) have driver abundance high enough that the predicted responder abundance rockets past any realistic number of individuals per array. This is a mathematical property of these two coefficients — not a mistake in the data or the fit. The capped, log-scaled curves shown here are the honest way to draw that pattern; just don’t read the high end of either curve as a literal abundance forecast. The actual result for both pairs — that the interaction is positive and statistically credible — comes from the model’s full posterior, not from this curve, and is unaffected.</p>
 </section>
 <section id="the-interaction-network-abundance-mediated" class="level2" data-number="4.1">
 <h2 data-number="4.1" class="anchored" data-anchor-id="the-interaction-network-abundance-mediated"><span class="header-section-number">4.1</span> The interaction network — abundance-mediated</h2>
@@ -2466,6 +2466,19 @@ Figure 2: Abundance-mediated species interaction network, all 30 array-level dr
 <h1 data-number="5"><span class="header-section-number">5</span> GJAM: the joint species distribution model</h1>
 <p>Module 4 fits GJAM (a joint species distribution model) across all 44 species at once and reports the <strong>residual correlation</strong> between every pair — the co-occurrence left over after each species’ own habitat response has already been accounted for. Module 4 only briefly introduces GJAM since its focus is habitat, so it is worth explaining more fully here, since this module leans on it directly for the second interaction network below.</p>
 <p><strong>How GJAM differs from a co-occurrence occupancy model.</strong> GJAM fits one joint regression across all species simultaneously, using each species’ habitat covariates to predict its own abundance or occurrence, and then examines the <strong>covariance structure of the residuals</strong> — the part of each species’ variation that habitat does not explain. If two species’ residuals are positively correlated, they tend to be more abundant together at the same sites <em>beyond</em> what shared habitat alone would predict; a negative residual correlation means the opposite. This is a fundamentally different quantity from either occupancy co-occurrence or the abundance-mediated model above: GJAM never asks “does species A’s abundance drive species B’s abundance” (a directional, mechanistic claim) — it only asks “after habitat, do A and B still move together” (an undirected, purely statistical association). A GJAM residual correlation is the <em>co-occurrence signature</em>, not a causal interaction; it can arise from a true ecological interaction, or from a shared unmeasured covariate GJAM’s own habitat terms failed to capture, or from a shared response to a third species not in the model at all — the same omitted-variable concern flagged in the citations above, though GJAM at least explicitly controls for every <em>measured</em> habitat covariate before reporting the residual.</p>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>The Spotify analogy
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>A music service like Spotify recommends songs two ways. The obvious way is by <strong>attributes</strong>: you like fast, guitar-heavy tracks, so here are more of those — that is the <em>habitat</em> part of our model, matching a species to the environmental features it prefers. But the powerful way is <strong>collaborative filtering</strong>: “people who liked this song also liked that one”, learned purely from patterns of co-listening, without knowing anything about the songs themselves. A joint model does exactly this for species. After it has used habitat to explain what it can, it looks at what is <em>left over</em> — which species keep turning up at the same cameras more often than their shared habitat preferences would predict — and reads that as a species-to-species association. The residual correlation matrix is the camera-trap equivalent of “cameras that photographed this species also photographed that one”.</p>
+</div>
+</div>
 <p><strong>Why GJAM despite that limitation.</strong> Its value here is exactly its scale: fitting all 44 species jointly, in one model, is the only tool in this pipeline that screens the <em>entire</em> community for candidate co-occurrence signals in a single pass — which is precisely how the 8 GJAM-flagged pairs above were identified for a formal, directional abundance test in the first place. GJAM is the discovery instrument; the abundance-mediated model is the confirmation instrument.</p>
 <section id="the-interaction-network-gjam-residual-co-occurrence" class="level2" data-number="5.1">
 <h2 data-number="5.1" class="anchored" data-anchor-id="the-interaction-network-gjam-residual-co-occurrence"><span class="header-section-number">5.1</span> The interaction network — GJAM residual co-occurrence</h2>
@@ -3152,103 +3165,121 @@ Figure 3: GJAM residual co-occurrence network across all 44 modelled species (|
 <span id="cb3-195"><a href="#cb3-195" aria-hidden="true" tabindex="-1"></a>60 spatial replicates carry less information than several hundred cameras — and it is a real,</span>
 <span id="cb3-196"><a href="#cb3-196" aria-hidden="true" tabindex="-1"></a>if disappointing, consequence of the aggregation rather than an error in either fit.</span>
 <span id="cb3-197"><a href="#cb3-197" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-198"><a href="#cb3-198" aria-hidden="true" tabindex="-1"></a>**A caveat on two of the seven curves.** The model links the responder&#39;s log-abundance to the</span>
-<span id="cb3-199"><a href="#cb3-199" aria-hidden="true" tabindex="-1"></a>driver&#39;s *raw* abundance (<span class="in">`γ0 · N_driver`</span>, not <span class="in">`γ0 · log(N_driver)`</span>), so the effect compounds</span>
-<span id="cb3-200"><a href="#cb3-200" aria-hidden="true" tabindex="-1"></a>exponentially rather than linearly as driver abundance rises. Four of the 7 pairs never push</span>
-<span id="cb3-201"><a href="#cb3-201" aria-hidden="true" tabindex="-1"></a>the fitted responder past a plausible ceiling (500 individuals/array) anywhere in the observed</span>
-<span id="cb3-202"><a href="#cb3-202" aria-hidden="true" tabindex="-1"></a>range, and one more (Lowland Tapir→White-lipped Peccary) only does so for 4 of 60 arrays. For</span>
-<span id="cb3-203"><a href="#cb3-203" aria-hidden="true" tabindex="-1"></a>**Ocelot→Azara&#39;s Agouti** and **Crab-eating Fox→Crab-eating Raccoon**, however, more than half</span>
-<span id="cb3-204"><a href="#cb3-204" aria-hidden="true" tabindex="-1"></a>the arrays (34 and 39 of 60) push the fitted responder abundance past any biologically</span>
-<span id="cb3-205"><a href="#cb3-205" aria-hidden="true" tabindex="-1"></a>plausible value once the driver&#39;s own abundance climbs — a property of this particular</span>
-<span id="cb3-206"><a href="#cb3-206" aria-hidden="true" tabindex="-1"></a>functional form at these particular coefficient magnitudes, not a data error. The capped,</span>
-<span id="cb3-207"><a href="#cb3-207" aria-hidden="true" tabindex="-1"></a>log-scaled curves shown here are the right way to *display* that pattern; they should not be</span>
-<span id="cb3-208"><a href="#cb3-208" aria-hidden="true" tabindex="-1"></a>read as precise abundance predictions above roughly the observed driver range. The</span>
-<span id="cb3-209"><a href="#cb3-209" aria-hidden="true" tabindex="-1"></a>**direction and significance** of all interactions (from the actual MCMC posterior, not from</span>
-<span id="cb3-210"><a href="#cb3-210" aria-hidden="true" tabindex="-1"></a>this post-hoc curve) are unaffected.</span>
-<span id="cb3-211"><a href="#cb3-211" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-212"><a href="#cb3-212" aria-hidden="true" tabindex="-1"></a><span class="fu">## The interaction network — abundance-mediated</span></span>
-<span id="cb3-213"><a href="#cb3-213" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-214"><a href="#cb3-214" aria-hidden="true" tabindex="-1"></a><span class="in">```{r fig-network-abundance}</span></span>
-<span id="cb3-215"><a href="#cb3-215" aria-hidden="true" tabindex="-1"></a><span class="co">#| echo: false</span></span>
-<span id="cb3-216"><a href="#cb3-216" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-cap: &quot;Abundance-mediated species interaction network, all 30 array-level driver→responder pairs. Solid coloured arrows are statistically significant (95% CI excludes 0): blue = positive, red = negative. Grey dashed arrows are not significant.&quot;</span></span>
-<span id="cb3-217"><a href="#cb3-217" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">include_graphics</span>(<span class="fu">file.path</span>(FIGS, <span class="st">&quot;interaction_network_abundance.png&quot;</span>))</span>
-<span id="cb3-218"><a href="#cb3-218" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb3-219"><a href="#cb3-219" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-220"><a href="#cb3-220" aria-hidden="true" tabindex="-1"></a><span class="fu"># GJAM: the joint species distribution model</span></span>
-<span id="cb3-221"><a href="#cb3-221" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-222"><a href="#cb3-222" aria-hidden="true" tabindex="-1"></a>Module 4 fits GJAM (a joint species distribution model) across all 44 species at once and</span>
-<span id="cb3-223"><a href="#cb3-223" aria-hidden="true" tabindex="-1"></a>reports the **residual correlation** between every pair — the co-occurrence left over after</span>
-<span id="cb3-224"><a href="#cb3-224" aria-hidden="true" tabindex="-1"></a>each species&#39; own habitat response has already been accounted for. Module 4 only briefly</span>
-<span id="cb3-225"><a href="#cb3-225" aria-hidden="true" tabindex="-1"></a>introduces GJAM since its focus is habitat, so it is worth explaining more fully here, since</span>
-<span id="cb3-226"><a href="#cb3-226" aria-hidden="true" tabindex="-1"></a>this module leans on it directly for the second interaction network below.</span>
-<span id="cb3-227"><a href="#cb3-227" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-228"><a href="#cb3-228" aria-hidden="true" tabindex="-1"></a>**How GJAM differs from a co-occurrence occupancy model.** GJAM fits one joint regression</span>
-<span id="cb3-229"><a href="#cb3-229" aria-hidden="true" tabindex="-1"></a>across all species simultaneously, using each species&#39; habitat covariates to predict its own</span>
-<span id="cb3-230"><a href="#cb3-230" aria-hidden="true" tabindex="-1"></a>abundance or occurrence, and then examines the **covariance structure of the residuals** — the</span>
-<span id="cb3-231"><a href="#cb3-231" aria-hidden="true" tabindex="-1"></a>part of each species&#39; variation that habitat does not explain. If two species&#39; residuals are</span>
-<span id="cb3-232"><a href="#cb3-232" aria-hidden="true" tabindex="-1"></a>positively correlated, they tend to be more abundant together at the same sites *beyond* what</span>
-<span id="cb3-233"><a href="#cb3-233" aria-hidden="true" tabindex="-1"></a>shared habitat alone would predict; a negative residual correlation means the opposite. This</span>
-<span id="cb3-234"><a href="#cb3-234" aria-hidden="true" tabindex="-1"></a>is a fundamentally different quantity from either occupancy co-occurrence or the</span>
-<span id="cb3-235"><a href="#cb3-235" aria-hidden="true" tabindex="-1"></a>abundance-mediated model above: GJAM never asks &quot;does species A&#39;s abundance drive species B&#39;s</span>
-<span id="cb3-236"><a href="#cb3-236" aria-hidden="true" tabindex="-1"></a>abundance&quot; (a directional, mechanistic claim) — it only asks &quot;after habitat, do A and B still</span>
-<span id="cb3-237"><a href="#cb3-237" aria-hidden="true" tabindex="-1"></a>move together&quot; (an undirected, purely statistical association). A GJAM residual correlation</span>
-<span id="cb3-238"><a href="#cb3-238" aria-hidden="true" tabindex="-1"></a>is the *co-occurrence signature*, not a causal interaction; it can arise from a true ecological</span>
-<span id="cb3-239"><a href="#cb3-239" aria-hidden="true" tabindex="-1"></a>interaction, or from a shared unmeasured covariate GJAM&#39;s own habitat terms failed to capture,</span>
-<span id="cb3-240"><a href="#cb3-240" aria-hidden="true" tabindex="-1"></a>or from a shared response to a third species not in the model at all — the same</span>
-<span id="cb3-241"><a href="#cb3-241" aria-hidden="true" tabindex="-1"></a>omitted-variable concern flagged in the citations above, though GJAM at least explicitly</span>
-<span id="cb3-242"><a href="#cb3-242" aria-hidden="true" tabindex="-1"></a>controls for every *measured* habitat covariate before reporting the residual.</span>
-<span id="cb3-243"><a href="#cb3-243" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-244"><a href="#cb3-244" aria-hidden="true" tabindex="-1"></a>**Why GJAM despite that limitation.** Its value here is exactly its scale: fitting all 44</span>
-<span id="cb3-245"><a href="#cb3-245" aria-hidden="true" tabindex="-1"></a>species jointly, in one model, is the only tool in this pipeline that screens the *entire*</span>
-<span id="cb3-246"><a href="#cb3-246" aria-hidden="true" tabindex="-1"></a>community for candidate co-occurrence signals in a single pass — which is precisely how the</span>
-<span id="cb3-247"><a href="#cb3-247" aria-hidden="true" tabindex="-1"></a>8 GJAM-flagged pairs above were identified for a formal, directional abundance test in the</span>
-<span id="cb3-248"><a href="#cb3-248" aria-hidden="true" tabindex="-1"></a>first place. GJAM is the discovery instrument; the abundance-mediated model is the</span>
-<span id="cb3-249"><a href="#cb3-249" aria-hidden="true" tabindex="-1"></a>confirmation instrument.</span>
-<span id="cb3-250"><a href="#cb3-250" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-251"><a href="#cb3-251" aria-hidden="true" tabindex="-1"></a><span class="fu">## The interaction network — GJAM residual co-occurrence</span></span>
-<span id="cb3-252"><a href="#cb3-252" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-253"><a href="#cb3-253" aria-hidden="true" tabindex="-1"></a><span class="in">```{r fig-network-gjam}</span></span>
-<span id="cb3-254"><a href="#cb3-254" aria-hidden="true" tabindex="-1"></a><span class="co">#| echo: false</span></span>
-<span id="cb3-255"><a href="#cb3-255" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-cap: &quot;GJAM residual co-occurrence network across all 44 modelled species (|r| &gt; 0.4, habitat effects already removed). Edge width scales with |r|.&quot;</span></span>
-<span id="cb3-256"><a href="#cb3-256" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">include_graphics</span>(<span class="fu">file.path</span>(FIGS, <span class="st">&quot;gjam_network_full.png&quot;</span>))</span>
-<span id="cb3-257"><a href="#cb3-257" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb3-258"><a href="#cb3-258" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-259"><a href="#cb3-259" aria-hidden="true" tabindex="-1"></a><span class="in">```{r gjam-network-stats}</span></span>
-<span id="cb3-260"><a href="#cb3-260" aria-hidden="true" tabindex="-1"></a><span class="co">#| echo: false</span></span>
-<span id="cb3-261"><a href="#cb3-261" aria-hidden="true" tabindex="-1"></a>gcorr <span class="ot">&lt;-</span> <span class="fu">read_d</span>(<span class="st">&quot;gjam_residual_correlation.csv&quot;</span>)</span>
-<span id="cb3-262"><a href="#cb3-262" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Species pairs with |r| &gt; 0.4:&quot;</span>, <span class="dv">12</span>, <span class="st">&quot;of&quot;</span>, <span class="fu">choose</span>(<span class="dv">44</span>,<span class="dv">2</span>), <span class="st">&quot;possible pairs</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
-<span id="cb3-263"><a href="#cb3-263" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb3-264"><a href="#cb3-264" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-265"><a href="#cb3-265" aria-hidden="true" tabindex="-1"></a>The strongest residual correlation in the whole community is Jaguarundi↔Southern Tiger Cat</span>
-<span id="cb3-266"><a href="#cb3-266" aria-hidden="true" tabindex="-1"></a>(r=0.56) — two small, ecologically similar felids whose shared positive residual likely</span>
-<span id="cb3-267"><a href="#cb3-267" aria-hidden="true" tabindex="-1"></a>reflects a genuine shared microhabitat preference that the 11 measured covariates do not fully</span>
-<span id="cb3-268"><a href="#cb3-268" aria-hidden="true" tabindex="-1"></a>capture. A cluster around Jaguarundi (also correlated with Margay, White-eared Opossum, and</span>
-<span id="cb3-269"><a href="#cb3-269" aria-hidden="true" tabindex="-1"></a>Crab-eating Raccoon) suggests this species sits at the center of a small-carnivore/opossum</span>
-<span id="cb3-270"><a href="#cb3-270" aria-hidden="true" tabindex="-1"></a>guild sharing similar habitat affinities. Separately, Capybara↔Puma (r=0.46) is notable given</span>
-<span id="cb3-271"><a href="#cb3-271" aria-hidden="true" tabindex="-1"></a>Puma is not a specialist capybara predator in this system — more likely both track riparian</span>
-<span id="cb3-272"><a href="#cb3-272" aria-hidden="true" tabindex="-1"></a>habitat independently.</span>
-<span id="cb3-273"><a href="#cb3-273" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-274"><a href="#cb3-274" aria-hidden="true" tabindex="-1"></a><span class="fu">## Reading the two networks together</span></span>
-<span id="cb3-275"><a href="#cb3-275" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-276"><a href="#cb3-276" aria-hidden="true" tabindex="-1"></a>The abundance-mediated network answers *whose abundance moves whose*, on a small,</span>
-<span id="cb3-277"><a href="#cb3-277" aria-hidden="true" tabindex="-1"></a>hypothesis-driven set of pairs; the GJAM network answers *who still co-occurs after habitat is</span>
-<span id="cb3-278"><a href="#cb3-278" aria-hidden="true" tabindex="-1"></a>removed*, across the entire community at once, with no claim about direction or mechanism.</span>
-<span id="cb3-279"><a href="#cb3-279" aria-hidden="true" tabindex="-1"></a>Where the two agree, the combination is stronger evidence than either alone: Crab-eating Fox</span>
-<span id="cb3-280"><a href="#cb3-280" aria-hidden="true" tabindex="-1"></a>and Crab-eating Raccoon are a significant positive pair in the abundance model *and* one of</span>
-<span id="cb3-281"><a href="#cb3-281" aria-hidden="true" tabindex="-1"></a>the strongest residual correlations in the whole community (r=0.49) — two independent methods,</span>
-<span id="cb3-282"><a href="#cb3-282" aria-hidden="true" tabindex="-1"></a>asking different questions, converging on the same pair. Where they diverge — most pairs in</span>
-<span id="cb3-283"><a href="#cb3-283" aria-hidden="true" tabindex="-1"></a>the abundance model&#39;s small hypothesis-driven list have no corresponding strong GJAM</span>
-<span id="cb3-284"><a href="#cb3-284" aria-hidden="true" tabindex="-1"></a>correlation, and most of GJAM&#39;s strongest correlations (the felid/opossum cluster around</span>
-<span id="cb3-285"><a href="#cb3-285" aria-hidden="true" tabindex="-1"></a>Jaguarundi, the rodent pairs) were never tested directionally — the abundance model&#39;s narrow</span>
-<span id="cb3-286"><a href="#cb3-286" aria-hidden="true" tabindex="-1"></a>pair list should not be read as ruling those associations out; they simply were not on this</span>
-<span id="cb3-287"><a href="#cb3-287" aria-hidden="true" tabindex="-1"></a>module&#39;s shortlist of directional hypotheses to test.</span>
-<span id="cb3-288"><a href="#cb3-288" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-289"><a href="#cb3-289" aria-hidden="true" tabindex="-1"></a><span class="fu"># What&#39;s deferred to later modules</span></span>
-<span id="cb3-290"><a href="#cb3-290" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-291"><a href="#cb3-291" aria-hidden="true" tabindex="-1"></a>**Temporal** patterns — activity timing, seasonal shifts, and predator-prey timing overlap —</span>
-<span id="cb3-292"><a href="#cb3-292" aria-hidden="true" tabindex="-1"></a>are covered in Module 7, which picks up the interaction question from a different angle: not</span>
-<span id="cb3-293"><a href="#cb3-293" aria-hidden="true" tabindex="-1"></a>*whether* one species&#39; abundance affects another&#39;s, but *when* each species is active relative</span>
-<span id="cb3-294"><a href="#cb3-294" aria-hidden="true" tabindex="-1"></a>to the others.</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal><i class="bi"></i></button></div>
+<span id="cb3-198"><a href="#cb3-198" aria-hidden="true" tabindex="-1"></a>**A caveat on two of the seven curves.** In this model, each extra individual of the driver</span>
+<span id="cb3-199"><a href="#cb3-199" aria-hidden="true" tabindex="-1"></a>species adds the *same fixed amount* to the responder&#39;s abundance on the log scale — which</span>
+<span id="cb3-200"><a href="#cb3-200" aria-hidden="true" tabindex="-1"></a>means on the natural scale, the responder&#39;s predicted abundance doesn&#39;t just go up steadily as</span>
+<span id="cb3-201"><a href="#cb3-201" aria-hidden="true" tabindex="-1"></a>the driver gets more common, it compounds like interest on a loan. Add a few more driver</span>
+<span id="cb3-202"><a href="#cb3-202" aria-hidden="true" tabindex="-1"></a>individuals and the prediction can rocket upward rather than climb steadily. For most pairs</span>
+<span id="cb3-203"><a href="#cb3-203" aria-hidden="true" tabindex="-1"></a>this never matters in practice, because no array has enough of the driver species to reach</span>
+<span id="cb3-204"><a href="#cb3-204" aria-hidden="true" tabindex="-1"></a>that runaway range: four of the 7 pairs never push the fitted responder past a plausible</span>
+<span id="cb3-205"><a href="#cb3-205" aria-hidden="true" tabindex="-1"></a>ceiling (500 individuals/array) anywhere in the observed data, and one more (Lowland</span>
+<span id="cb3-206"><a href="#cb3-206" aria-hidden="true" tabindex="-1"></a>Tapir→White-lipped Peccary) only does so for 4 of the 60 arrays. For **Ocelot→Azara&#39;s Agouti**</span>
+<span id="cb3-207"><a href="#cb3-207" aria-hidden="true" tabindex="-1"></a>and **Crab-eating Fox→Crab-eating Raccoon**, though, more than half of the 60 arrays (34 and</span>
+<span id="cb3-208"><a href="#cb3-208" aria-hidden="true" tabindex="-1"></a>39) have driver abundance high enough that the predicted responder abundance rockets past any</span>
+<span id="cb3-209"><a href="#cb3-209" aria-hidden="true" tabindex="-1"></a>realistic number of individuals per array. This is a mathematical property of these two</span>
+<span id="cb3-210"><a href="#cb3-210" aria-hidden="true" tabindex="-1"></a>coefficients — not a mistake in the data or the fit. The capped, log-scaled curves shown here</span>
+<span id="cb3-211"><a href="#cb3-211" aria-hidden="true" tabindex="-1"></a>are the honest way to draw that pattern; just don&#39;t read the high end of either curve as a</span>
+<span id="cb3-212"><a href="#cb3-212" aria-hidden="true" tabindex="-1"></a>literal abundance forecast. The actual result for both pairs — that the interaction is</span>
+<span id="cb3-213"><a href="#cb3-213" aria-hidden="true" tabindex="-1"></a>positive and statistically credible — comes from the model&#39;s full posterior, not from this</span>
+<span id="cb3-214"><a href="#cb3-214" aria-hidden="true" tabindex="-1"></a>curve, and is unaffected.</span>
+<span id="cb3-215"><a href="#cb3-215" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-216"><a href="#cb3-216" aria-hidden="true" tabindex="-1"></a><span class="fu">## The interaction network — abundance-mediated</span></span>
+<span id="cb3-217"><a href="#cb3-217" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-218"><a href="#cb3-218" aria-hidden="true" tabindex="-1"></a><span class="in">```{r fig-network-abundance}</span></span>
+<span id="cb3-219"><a href="#cb3-219" aria-hidden="true" tabindex="-1"></a><span class="co">#| echo: false</span></span>
+<span id="cb3-220"><a href="#cb3-220" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-cap: &quot;Abundance-mediated species interaction network, all 30 array-level driver→responder pairs. Solid coloured arrows are statistically significant (95% CI excludes 0): blue = positive, red = negative. Grey dashed arrows are not significant.&quot;</span></span>
+<span id="cb3-221"><a href="#cb3-221" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">include_graphics</span>(<span class="fu">file.path</span>(FIGS, <span class="st">&quot;interaction_network_abundance.png&quot;</span>))</span>
+<span id="cb3-222"><a href="#cb3-222" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb3-223"><a href="#cb3-223" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-224"><a href="#cb3-224" aria-hidden="true" tabindex="-1"></a><span class="fu"># GJAM: the joint species distribution model</span></span>
+<span id="cb3-225"><a href="#cb3-225" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-226"><a href="#cb3-226" aria-hidden="true" tabindex="-1"></a>Module 4 fits GJAM (a joint species distribution model) across all 44 species at once and</span>
+<span id="cb3-227"><a href="#cb3-227" aria-hidden="true" tabindex="-1"></a>reports the **residual correlation** between every pair — the co-occurrence left over after</span>
+<span id="cb3-228"><a href="#cb3-228" aria-hidden="true" tabindex="-1"></a>each species&#39; own habitat response has already been accounted for. Module 4 only briefly</span>
+<span id="cb3-229"><a href="#cb3-229" aria-hidden="true" tabindex="-1"></a>introduces GJAM since its focus is habitat, so it is worth explaining more fully here, since</span>
+<span id="cb3-230"><a href="#cb3-230" aria-hidden="true" tabindex="-1"></a>this module leans on it directly for the second interaction network below.</span>
+<span id="cb3-231"><a href="#cb3-231" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-232"><a href="#cb3-232" aria-hidden="true" tabindex="-1"></a>**How GJAM differs from a co-occurrence occupancy model.** GJAM fits one joint regression</span>
+<span id="cb3-233"><a href="#cb3-233" aria-hidden="true" tabindex="-1"></a>across all species simultaneously, using each species&#39; habitat covariates to predict its own</span>
+<span id="cb3-234"><a href="#cb3-234" aria-hidden="true" tabindex="-1"></a>abundance or occurrence, and then examines the **covariance structure of the residuals** — the</span>
+<span id="cb3-235"><a href="#cb3-235" aria-hidden="true" tabindex="-1"></a>part of each species&#39; variation that habitat does not explain. If two species&#39; residuals are</span>
+<span id="cb3-236"><a href="#cb3-236" aria-hidden="true" tabindex="-1"></a>positively correlated, they tend to be more abundant together at the same sites *beyond* what</span>
+<span id="cb3-237"><a href="#cb3-237" aria-hidden="true" tabindex="-1"></a>shared habitat alone would predict; a negative residual correlation means the opposite. This</span>
+<span id="cb3-238"><a href="#cb3-238" aria-hidden="true" tabindex="-1"></a>is a fundamentally different quantity from either occupancy co-occurrence or the</span>
+<span id="cb3-239"><a href="#cb3-239" aria-hidden="true" tabindex="-1"></a>abundance-mediated model above: GJAM never asks &quot;does species A&#39;s abundance drive species B&#39;s</span>
+<span id="cb3-240"><a href="#cb3-240" aria-hidden="true" tabindex="-1"></a>abundance&quot; (a directional, mechanistic claim) — it only asks &quot;after habitat, do A and B still</span>
+<span id="cb3-241"><a href="#cb3-241" aria-hidden="true" tabindex="-1"></a>move together&quot; (an undirected, purely statistical association). A GJAM residual correlation</span>
+<span id="cb3-242"><a href="#cb3-242" aria-hidden="true" tabindex="-1"></a>is the *co-occurrence signature*, not a causal interaction; it can arise from a true ecological</span>
+<span id="cb3-243"><a href="#cb3-243" aria-hidden="true" tabindex="-1"></a>interaction, or from a shared unmeasured covariate GJAM&#39;s own habitat terms failed to capture,</span>
+<span id="cb3-244"><a href="#cb3-244" aria-hidden="true" tabindex="-1"></a>or from a shared response to a third species not in the model at all — the same</span>
+<span id="cb3-245"><a href="#cb3-245" aria-hidden="true" tabindex="-1"></a>omitted-variable concern flagged in the citations above, though GJAM at least explicitly</span>
+<span id="cb3-246"><a href="#cb3-246" aria-hidden="true" tabindex="-1"></a>controls for every *measured* habitat covariate before reporting the residual.</span>
+<span id="cb3-247"><a href="#cb3-247" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-248"><a href="#cb3-248" aria-hidden="true" tabindex="-1"></a>::: {.callout-tip}</span>
+<span id="cb3-249"><a href="#cb3-249" aria-hidden="true" tabindex="-1"></a><span class="fu">## The Spotify analogy</span></span>
+<span id="cb3-250"><a href="#cb3-250" aria-hidden="true" tabindex="-1"></a>A music service like Spotify recommends songs two ways. The obvious way is by</span>
+<span id="cb3-251"><a href="#cb3-251" aria-hidden="true" tabindex="-1"></a>**attributes**: you like fast, guitar-heavy tracks, so here are more of those — that is the</span>
+<span id="cb3-252"><a href="#cb3-252" aria-hidden="true" tabindex="-1"></a>*habitat* part of our model, matching a species to the environmental features it prefers.</span>
+<span id="cb3-253"><a href="#cb3-253" aria-hidden="true" tabindex="-1"></a>But the powerful way is **collaborative filtering**: &quot;people who liked this song also liked</span>
+<span id="cb3-254"><a href="#cb3-254" aria-hidden="true" tabindex="-1"></a>that one&quot;, learned purely from patterns of co-listening, without knowing anything about the</span>
+<span id="cb3-255"><a href="#cb3-255" aria-hidden="true" tabindex="-1"></a>songs themselves. A joint model does exactly this for species. After it has used habitat to</span>
+<span id="cb3-256"><a href="#cb3-256" aria-hidden="true" tabindex="-1"></a>explain what it can, it looks at what is *left over* — which species keep turning up at the</span>
+<span id="cb3-257"><a href="#cb3-257" aria-hidden="true" tabindex="-1"></a>same cameras more often than their shared habitat preferences would predict — and reads</span>
+<span id="cb3-258"><a href="#cb3-258" aria-hidden="true" tabindex="-1"></a>that as a species-to-species association. The residual correlation matrix is the camera-trap</span>
+<span id="cb3-259"><a href="#cb3-259" aria-hidden="true" tabindex="-1"></a>equivalent of &quot;cameras that photographed this species also photographed that one&quot;.</span>
+<span id="cb3-260"><a href="#cb3-260" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb3-261"><a href="#cb3-261" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-262"><a href="#cb3-262" aria-hidden="true" tabindex="-1"></a>**Why GJAM despite that limitation.** Its value here is exactly its scale: fitting all 44</span>
+<span id="cb3-263"><a href="#cb3-263" aria-hidden="true" tabindex="-1"></a>species jointly, in one model, is the only tool in this pipeline that screens the *entire*</span>
+<span id="cb3-264"><a href="#cb3-264" aria-hidden="true" tabindex="-1"></a>community for candidate co-occurrence signals in a single pass — which is precisely how the</span>
+<span id="cb3-265"><a href="#cb3-265" aria-hidden="true" tabindex="-1"></a>8 GJAM-flagged pairs above were identified for a formal, directional abundance test in the</span>
+<span id="cb3-266"><a href="#cb3-266" aria-hidden="true" tabindex="-1"></a>first place. GJAM is the discovery instrument; the abundance-mediated model is the</span>
+<span id="cb3-267"><a href="#cb3-267" aria-hidden="true" tabindex="-1"></a>confirmation instrument.</span>
+<span id="cb3-268"><a href="#cb3-268" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-269"><a href="#cb3-269" aria-hidden="true" tabindex="-1"></a><span class="fu">## The interaction network — GJAM residual co-occurrence</span></span>
+<span id="cb3-270"><a href="#cb3-270" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-271"><a href="#cb3-271" aria-hidden="true" tabindex="-1"></a><span class="in">```{r fig-network-gjam}</span></span>
+<span id="cb3-272"><a href="#cb3-272" aria-hidden="true" tabindex="-1"></a><span class="co">#| echo: false</span></span>
+<span id="cb3-273"><a href="#cb3-273" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-cap: &quot;GJAM residual co-occurrence network across all 44 modelled species (|r| &gt; 0.4, habitat effects already removed). Edge width scales with |r|.&quot;</span></span>
+<span id="cb3-274"><a href="#cb3-274" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">include_graphics</span>(<span class="fu">file.path</span>(FIGS, <span class="st">&quot;gjam_network_full.png&quot;</span>))</span>
+<span id="cb3-275"><a href="#cb3-275" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb3-276"><a href="#cb3-276" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-277"><a href="#cb3-277" aria-hidden="true" tabindex="-1"></a><span class="in">```{r gjam-network-stats}</span></span>
+<span id="cb3-278"><a href="#cb3-278" aria-hidden="true" tabindex="-1"></a><span class="co">#| echo: false</span></span>
+<span id="cb3-279"><a href="#cb3-279" aria-hidden="true" tabindex="-1"></a>gcorr <span class="ot">&lt;-</span> <span class="fu">read_d</span>(<span class="st">&quot;gjam_residual_correlation.csv&quot;</span>)</span>
+<span id="cb3-280"><a href="#cb3-280" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Species pairs with |r| &gt; 0.4:&quot;</span>, <span class="dv">12</span>, <span class="st">&quot;of&quot;</span>, <span class="fu">choose</span>(<span class="dv">44</span>,<span class="dv">2</span>), <span class="st">&quot;possible pairs</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb3-281"><a href="#cb3-281" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb3-282"><a href="#cb3-282" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-283"><a href="#cb3-283" aria-hidden="true" tabindex="-1"></a>The strongest residual correlation in the whole community is Jaguarundi↔Southern Tiger Cat</span>
+<span id="cb3-284"><a href="#cb3-284" aria-hidden="true" tabindex="-1"></a>(r=0.56) — two small, ecologically similar felids whose shared positive residual likely</span>
+<span id="cb3-285"><a href="#cb3-285" aria-hidden="true" tabindex="-1"></a>reflects a genuine shared microhabitat preference that the 11 measured covariates do not fully</span>
+<span id="cb3-286"><a href="#cb3-286" aria-hidden="true" tabindex="-1"></a>capture. A cluster around Jaguarundi (also correlated with Margay, White-eared Opossum, and</span>
+<span id="cb3-287"><a href="#cb3-287" aria-hidden="true" tabindex="-1"></a>Crab-eating Raccoon) suggests this species sits at the center of a small-carnivore/opossum</span>
+<span id="cb3-288"><a href="#cb3-288" aria-hidden="true" tabindex="-1"></a>guild sharing similar habitat affinities. Separately, Capybara↔Puma (r=0.46) is notable given</span>
+<span id="cb3-289"><a href="#cb3-289" aria-hidden="true" tabindex="-1"></a>Puma is not a specialist capybara predator in this system — more likely both track riparian</span>
+<span id="cb3-290"><a href="#cb3-290" aria-hidden="true" tabindex="-1"></a>habitat independently.</span>
+<span id="cb3-291"><a href="#cb3-291" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-292"><a href="#cb3-292" aria-hidden="true" tabindex="-1"></a><span class="fu">## Reading the two networks together</span></span>
+<span id="cb3-293"><a href="#cb3-293" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-294"><a href="#cb3-294" aria-hidden="true" tabindex="-1"></a>The abundance-mediated network answers *whose abundance moves whose*, on a small,</span>
+<span id="cb3-295"><a href="#cb3-295" aria-hidden="true" tabindex="-1"></a>hypothesis-driven set of pairs; the GJAM network answers *who still co-occurs after habitat is</span>
+<span id="cb3-296"><a href="#cb3-296" aria-hidden="true" tabindex="-1"></a>removed*, across the entire community at once, with no claim about direction or mechanism.</span>
+<span id="cb3-297"><a href="#cb3-297" aria-hidden="true" tabindex="-1"></a>Where the two agree, the combination is stronger evidence than either alone: Crab-eating Fox</span>
+<span id="cb3-298"><a href="#cb3-298" aria-hidden="true" tabindex="-1"></a>and Crab-eating Raccoon are a significant positive pair in the abundance model *and* one of</span>
+<span id="cb3-299"><a href="#cb3-299" aria-hidden="true" tabindex="-1"></a>the strongest residual correlations in the whole community (r=0.49) — two independent methods,</span>
+<span id="cb3-300"><a href="#cb3-300" aria-hidden="true" tabindex="-1"></a>asking different questions, converging on the same pair. Where they diverge — most pairs in</span>
+<span id="cb3-301"><a href="#cb3-301" aria-hidden="true" tabindex="-1"></a>the abundance model&#39;s small hypothesis-driven list have no corresponding strong GJAM</span>
+<span id="cb3-302"><a href="#cb3-302" aria-hidden="true" tabindex="-1"></a>correlation, and most of GJAM&#39;s strongest correlations (the felid/opossum cluster around</span>
+<span id="cb3-303"><a href="#cb3-303" aria-hidden="true" tabindex="-1"></a>Jaguarundi, the rodent pairs) were never tested directionally — the abundance model&#39;s narrow</span>
+<span id="cb3-304"><a href="#cb3-304" aria-hidden="true" tabindex="-1"></a>pair list should not be read as ruling those associations out; they simply were not on this</span>
+<span id="cb3-305"><a href="#cb3-305" aria-hidden="true" tabindex="-1"></a>module&#39;s shortlist of directional hypotheses to test.</span>
+<span id="cb3-306"><a href="#cb3-306" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-307"><a href="#cb3-307" aria-hidden="true" tabindex="-1"></a><span class="fu"># What&#39;s deferred to later modules</span></span>
+<span id="cb3-308"><a href="#cb3-308" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-309"><a href="#cb3-309" aria-hidden="true" tabindex="-1"></a>**Temporal** patterns — activity timing, seasonal shifts, and predator-prey timing overlap —</span>
+<span id="cb3-310"><a href="#cb3-310" aria-hidden="true" tabindex="-1"></a>are covered in Module 7, which picks up the interaction question from a different angle: not</span>
+<span id="cb3-311"><a href="#cb3-311" aria-hidden="true" tabindex="-1"></a>*whether* one species&#39; abundance affects another&#39;s, but *when* each species is active relative</span>
+<span id="cb3-312"><a href="#cb3-312" aria-hidden="true" tabindex="-1"></a>to the others.</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal><i class="bi"></i></button></div>
 </div></div></div></div></div>
 </div> <!-- /content -->
 

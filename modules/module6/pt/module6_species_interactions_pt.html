@@ -2215,7 +2215,7 @@ vertical-align: -.125em;
   <li><a href="#como-a-interação-realmente-se-apresenta" id="toc-como-a-interação-realmente-se-apresenta" class="nav-link" data-scroll-target="#como-a-interação-realmente-se-apresenta"><span class="header-section-number">4.0.1</span> Como a interação realmente se apresenta</a></li>
   <li><a href="#a-rede-de-interações-mediada-pela-abundância" id="toc-a-rede-de-interações-mediada-pela-abundância" class="nav-link" data-scroll-target="#a-rede-de-interações-mediada-pela-abundância"><span class="header-section-number">4.1</span> A rede de interações — mediada pela abundância</a></li>
   </ul></li>
-  <li><a href="#gjam-o-modelo-conjunto-de-distribuição-de-espécies" id="toc-gjam-o-modelo-conjunto-de-distribuição-de-espécies" class="nav-link" data-scroll-target="#gjam-o-modelo-conjunto-de-distribuição-de-espécies"><span class="header-section-number">5</span> GJAM: o modelo conjunto de distribuição de espécies</a>
+  <li><a href="#gjam-o-modelo-de-distribuição-conjunta-de-espécies" id="toc-gjam-o-modelo-de-distribuição-conjunta-de-espécies" class="nav-link" data-scroll-target="#gjam-o-modelo-de-distribuição-conjunta-de-espécies"><span class="header-section-number">5</span> GJAM: o modelo de distribuição conjunta de espécies</a>
   <ul class="collapse">
   <li><a href="#a-rede-de-interação-co-ocorrência-residual-do-gjam" id="toc-a-rede-de-interação-co-ocorrência-residual-do-gjam" class="nav-link" data-scroll-target="#a-rede-de-interação-co-ocorrência-residual-do-gjam"><span class="header-section-number">5.1</span> A rede de interação — co-ocorrência residual do GJAM</a></li>
   <li><a href="#lendo-as-duas-redes-em-conjunto" id="toc-lendo-as-duas-redes-em-conjunto" class="nav-link" data-scroll-target="#lendo-as-duas-redes-em-conjunto"><span class="header-section-number">5.2</span> Lendo as duas redes em conjunto</a></li>
@@ -2441,8 +2441,8 @@ Figura 1: How each responder’s fitted abundance changes with driver abundance
 </div>
 </div>
 </div>
-<p>Dois pares da lista a priori original em nível de câmera — Onça-pintada→Queixada e Onça-pintada→Cateto — não são mostrados aqui: no nível de array, suas estimativas pontuais mantêm a mesma direção negativa observada no nível de câmera, mas os intervalos de credibilidade de 95% se ampliam o suficiente para cruzar o zero (Queixada: -5,17 a 2,07; Cateto: -1,24 a 0,42). Esse é o mesmo padrão de perda de poder documentado ao longo da comparação câmera-vs-array deste módulo — 60 réplicas espaciais carregam menos informação do que várias centenas de câmeras — e é uma consequência real, embora decepcionante, da agregação, e não um erro em nenhum dos dois ajustes.</p>
-<p><strong>Uma ressalva sobre duas das sete curvas.</strong> O modelo relaciona o log-abundância da espécie respondente à abundância <em>bruta</em> da espécie motriz (<code>γ0 · N_driver</code>, e não <code>γ0 · log(N_driver)</code>), de modo que o efeito se acumula exponencialmente, e não linearmente, conforme a abundância da espécie motriz aumenta. Quatro dos 7 pares nunca levam a abundância ajustada da espécie respondente além de um teto biologicamente plausível (500 indivíduos/array) em nenhum ponto da faixa observada, e mais um par (Anta→Queixada) só faz isso em 4 de 60 arrays. Para <strong>Jaguatirica→Cutia-de-azara</strong> e <strong>Cachorro-do-mato→Mão-pelada</strong>, porém, mais da metade dos arrays (34 e 39 de 60) levam a abundância ajustada da espécie respondente além de qualquer valor biologicamente plausível uma vez que a abundância da própria espécie motriz aumenta — uma propriedade dessa forma funcional específica nessas magnitudes de coeficiente específicas, e não um erro nos dados. As curvas limitadas e em escala logarítmica mostradas aqui são a forma correta de <em>exibir</em> esse padrão; elas não devem ser lidas como previsões precisas de abundância além, aproximadamente, da faixa observada da espécie motriz. A <strong>direção e a significância</strong> de todas as interações (a partir do posterior real do MCMC, e não desta curva post-hoc) não são afetadas.</p>
+<p>Duas duplas da lista a priori original em nível de câmera — Onça-pintada→Queixada e Onça-pintada→Cateto — <strong>não</strong> são mostradas aqui: em nível de array, suas estimativas pontuais mantêm a mesma direção negativa observada em nível de câmera, mas os intervalos de credibilidade de 95% se ampliam o suficiente para cruzar o zero (Queixada: -5,17 a 2,07; Cateto: -1,24 a 0,42). Esse é o mesmo padrão de perda de poder documentado ao longo da comparação câmera-vs-array deste módulo — 60 réplicas espaciais carregam menos informação do que várias centenas de câmeras — e é uma consequência real, embora decepcionante, da agregação, e não um erro em nenhum dos ajustes.</p>
+<p><strong>Uma ressalva sobre duas das sete curvas.</strong> Neste modelo, cada indivíduo extra da espécie motriz adiciona a <em>mesma quantidade fixa</em> à abundância da espécie respondente na escala logarítmica — o que significa que, na escala natural, a abundância prevista da respondente não apenas sobe de forma constante conforme a motriz se torna mais comum, ela se acumula como juros de um empréstimo. Adicionar alguns indivíduos extras da motriz pode fazer a previsão disparar para cima em vez de subir de forma constante. Para a maioria das duplas isso nunca importa na prática, porque nenhum array tem indivíduos suficientes da espécie motriz para alcançar essa faixa de disparada: quatro das 7 duplas nunca empurram a respondente ajustada além de um teto plausível (500 indivíduos/array) em nenhum ponto dos dados observados, e mais uma (Tapir-da- planície→Queixada) só faz isso em 4 dos 60 arrays. Para <strong>Jaguatirica→Cutia-de-Azara</strong> e <strong>Cachorro-do-mato→Mão-pelada</strong>, porém, mais da metade dos 60 arrays (34 e 39) têm abundância da motriz alta o suficiente para que a abundância prevista da respondente dispare além de qualquer número realista de indivíduos por array. Essa é uma propriedade matemática desses dois coeficientes — não um erro nos dados ou no ajuste. As curvas limitadas e em escala logarítmica mostradas aqui são a forma honesta de representar esse padrão; apenas não leia a extremidade superior de nenhuma das curvas como uma previsão literal de abundância. O resultado real para ambas as duplas — de que a interação é positiva e estatisticamente credível — vem do posterior completo do modelo, não desta curva, e não é afetado.</p>
 </section>
 <section id="a-rede-de-interações-mediada-pela-abundância" class="level2" data-number="4.1">
 <h2 data-number="4.1" class="anchored" data-anchor-id="a-rede-de-interações-mediada-pela-abundância"><span class="header-section-number">4.1</span> A rede de interações — mediada pela abundância</h2>
@@ -2462,11 +2462,24 @@ Figura 2: Abundance-mediated species interaction network, all 30 array-level dr
 </div>
 </section>
 </section>
-<section id="gjam-o-modelo-conjunto-de-distribuição-de-espécies" class="level1" data-number="5">
-<h1 data-number="5"><span class="header-section-number">5</span> GJAM: o modelo conjunto de distribuição de espécies</h1>
-<p>O Módulo 4 ajusta o GJAM (um modelo conjunto de distribuição de espécies) para as 44 espécies simultaneamente e reporta a <strong>correlação residual</strong> entre cada par de espécies — a co-ocorrência que resta depois que a resposta de habitat de cada espécie já foi contabilizada. O Módulo 4 apresenta o GJAM apenas brevemente, já que seu foco é habitat, então vale a pena explicá-lo mais detalhadamente aqui, uma vez que este módulo se apoia nele diretamente para a segunda rede de interação abaixo.</p>
-<p><strong>Como o GJAM difere de um modelo de ocupação com co-ocorrência.</strong> O GJAM ajusta uma única regressão conjunta para todas as espécies simultaneamente, usando as covariáveis de habitat de cada espécie para prever sua própria abundância ou ocorrência, e então examina a <strong>estrutura de covariância dos resíduos</strong> — a parte da variação de cada espécie que o habitat não explica. Se os resíduos de duas espécies são positivamente correlacionados, elas tendem a ser mais abundantes juntas nos mesmos sítios <em>além</em> do que o habitat compartilhado por si só preveria; uma correlação residual negativa significa o oposto. Essa é uma grandeza fundamentalmente diferente tanto da co-ocorrência de ocupação quanto do modelo mediado pela abundância acima: o GJAM nunca pergunta “a abundância da espécie A é motriz da abundância da espécie B” (uma afirmação direcional e mecanística) — ele só pergunta “depois do habitat, A e B ainda se movem juntas” (uma associação não direcional, puramente estatística). Uma correlação residual do GJAM é a <em>assinatura de co-ocorrência</em>, não uma interação causal; ela pode surgir de uma verdadeira interação ecológica, ou de uma covariável não medida compartilhada que os próprios termos de habitat do GJAM não conseguiram capturar, ou de uma resposta compartilhada a uma terceira espécie que nem está no modelo — a mesma preocupação de variável omitida apontada nas citações acima, embora o GJAM pelo menos controle explicitamente cada covariável de habitat <em>medida</em> antes de reportar o resíduo.</p>
-<p><strong>Por que usar o GJAM apesar dessa limitação.</strong> Seu valor aqui está exatamente na escala: ajustar as 44 espécies conjuntamente, em um único modelo, é a única ferramenta neste pipeline que rastreia a comunidade <em>inteira</em> em busca de sinais candidatos de co-ocorrência em uma única passagem — o que é precisamente como os 8 pares sinalizados pelo GJAM acima foram identificados para um teste direcional e formal de abundância, em primeiro lugar. O GJAM é o instrumento de descoberta; o modelo mediado pela abundância é o instrumento de confirmação.</p>
+<section id="gjam-o-modelo-de-distribuição-conjunta-de-espécies" class="level1" data-number="5">
+<h1 data-number="5"><span class="header-section-number">5</span> GJAM: o modelo de distribuição conjunta de espécies</h1>
+<p>O Módulo 4 ajusta o GJAM (um modelo de distribuição conjunta de espécies) para as 44 espécies simultaneamente e reporta a <strong>correlação residual</strong> entre cada par — a co-ocorrência que resta depois que a resposta de cada espécie ao seu próprio habitat já foi contabilizada. O Módulo 4 apresenta o GJAM apenas brevemente, já que seu foco é o habitat, então vale a pena explicá-lo mais detalhadamente aqui, já que este módulo se apoia nele diretamente para a segunda rede de interação abaixo.</p>
+<p><strong>Como o GJAM difere de um modelo de ocupação com co-ocorrência.</strong> O GJAM ajusta uma única regressão conjunta para todas as espécies simultaneamente, usando as covariáveis de habitat de cada espécie para prever sua própria abundância ou ocorrência, e então examina a <strong>estrutura de covariância dos resíduos</strong> — a parte da variação de cada espécie que o habitat não explica. Se os resíduos de duas espécies são positivamente correlacionados, elas tendem a ser mais abundantes juntas nos mesmos locais <em>além</em> do que o habitat compartilhado por si só preveria; uma correlação residual negativa significa o oposto. Essa é uma grandeza fundamentalmente diferente tanto da co-ocorrência de ocupação quanto do modelo mediado pela abundância acima: o GJAM nunca pergunta “a abundância da espécie A impulsiona a abundância da espécie B” (uma afirmação direcional e mecanística) — ele só pergunta “depois do habitat, A e B ainda se movem juntas?” (uma associação não direcional, puramente estatística). Uma correlação residual do GJAM é a <em>assinatura de co-ocorrência</em>, não uma interação causal; ela pode surgir de uma verdadeira interação ecológica, ou de uma covariável não medida compartilhada que os próprios termos de habitat do GJAM não conseguiram capturar, ou de uma resposta compartilhada a uma terceira espécie que não está no modelo — a mesma preocupação de variável omitida apontada nas citações acima, embora o GJAM ao menos controle explicitamente todas as covariáveis de habitat <em>medidas</em> antes de reportar o resíduo.</p>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Dica</span>A analogia do Spotify
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Um serviço de música como o Spotify recomenda músicas de duas formas. A forma óbvia é por <strong>atributos</strong>: você gosta de faixas rápidas e com muita guitarra, então aqui estão mais faixas assim — essa é a parte de <em>habitat</em> do nosso modelo, combinando uma espécie às características ambientais que ela prefere. Mas a forma poderosa é a <strong>filtragem colaborativa</strong>: “pessoas que gostaram dessa música também gostaram daquela”, aprendida puramente a partir de padrões de escuta em conjunto, sem saber nada sobre as músicas em si. Um modelo conjunto faz exatamente isso para espécies. Depois de usar o habitat para explicar o que pode, ele observa o que <em>resta</em> — quais espécies continuam aparecendo nas mesmas câmeras com mais frequência do que suas preferências de habitat compartilhadas preveriam — e interpreta isso como uma associação entre espécies. A matriz de correlação residual é o equivalente, em armadilhas fotográficas, de “câmeras que fotografaram esta espécie também fotografaram aquela”.</p>
+</div>
+</div>
+<p><strong>Por que usar o GJAM apesar dessa limitação.</strong> Seu valor aqui está exatamente na sua escala: ajustar as 44 espécies conjuntamente, em um único modelo, é a única ferramenta neste pipeline que rastreia a comunidade <em>inteira</em> em busca de sinais candidatos de co-ocorrência em uma única passada — e foi precisamente assim que os 8 pares sinalizados pelo GJAM acima foram identificados para um teste direcional formal de abundância, em primeiro lugar. O GJAM é o instrumento de descoberta; o modelo mediado pela abundância é o instrumento de confirmação.</p>
 <section id="a-rede-de-interação-co-ocorrência-residual-do-gjam" class="level2" data-number="5.1">
 <h2 data-number="5.1" class="anchored" data-anchor-id="a-rede-de-interação-co-ocorrência-residual-do-gjam"><span class="header-section-number">5.1</span> A rede de interação — co-ocorrência residual do GJAM</h2>
 <div class="cell">
@@ -3152,97 +3165,136 @@ Figura 3: GJAM residual co-occurrence network across all 44 modelled species (|
 <span id="cb3-195"><a href="#cb3-195" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">include_graphics</span>(<span class="fu">file.path</span>(FIGS, <span class="st">&quot;abundance_response_curves_array.png&quot;</span>))</span>
 <span id="cb3-196"><a href="#cb3-196" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
 <span id="cb3-197"><a href="#cb3-197" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-198"><a href="#cb3-198" aria-hidden="true" tabindex="-1"></a>Dois pares da lista a priori original em nível de câmera — Onça-pintada→Queixada e Onça-pintada→Cateto — não são mostrados aqui: no nível de array, suas estimativas pontuais mantêm a mesma direção negativa observada no nível de câmera, mas os intervalos de credibilidade de 95% se ampliam o suficiente para cruzar o zero (Queixada: -5,17 a 2,07; Cateto: -1,24 a 0,42). Esse é o mesmo padrão de perda de poder documentado ao longo da comparação câmera-vs-array deste módulo — 60 réplicas espaciais carregam menos informação do que várias centenas de câmeras — e é uma consequência real, embora decepcionante, da agregação, e não um erro em nenhum dos dois ajustes.</span>
-<span id="cb3-199"><a href="#cb3-199" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-200"><a href="#cb3-200" aria-hidden="true" tabindex="-1"></a>**Uma ressalva sobre duas das sete curvas.** O modelo relaciona o log-abundância da espécie respondente à abundância *bruta* da espécie motriz (`γ0 · N_driver`, e não `γ0 · log(N_driver)`), de modo que o efeito se acumula exponencialmente, e não linearmente, conforme a abundância da espécie motriz aumenta. Quatro dos 7 pares nunca levam a abundância ajustada da espécie respondente além de um teto biologicamente plausível (500 indivíduos/array) em nenhum ponto da faixa observada, e mais um par (Anta→Queixada) só faz isso em 4 de 60 arrays. Para **Jaguatirica→Cutia-de-azara** e **Cachorro-do-mato→Mão-pelada**, porém, mais da metade dos arrays (34 e 39 de 60) levam a abundância ajustada da espécie respondente além de qualquer valor biologicamente plausível uma vez que a abundância da própria espécie motriz aumenta — uma propriedade dessa forma funcional específica nessas magnitudes de coeficiente específicas, e não um erro nos dados. As curvas limitadas e em escala logarítmica mostradas aqui são a forma correta de *exibir* esse padrão; elas não devem ser lidas como previsões precisas de abundância além, aproximadamente, da faixa observada da espécie motriz. A **direção e a significância** de todas as interações (a partir do posterior real do MCMC, e não desta curva post-hoc) não são afetadas.</span>
-<span id="cb3-201"><a href="#cb3-201" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-202"><a href="#cb3-202" aria-hidden="true" tabindex="-1"></a><span class="fu">## A rede de interações — mediada pela abundância</span></span>
-<span id="cb3-203"><a href="#cb3-203" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-204"><a href="#cb3-204" aria-hidden="true" tabindex="-1"></a><span class="in">```{r fig-network-abundance}</span></span>
-<span id="cb3-205"><a href="#cb3-205" aria-hidden="true" tabindex="-1"></a><span class="co">#| echo: false</span></span>
-<span id="cb3-206"><a href="#cb3-206" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-cap: &quot;Abundance-mediated species interaction network, all 30 array-level driver→responder pairs. Solid coloured arrows are statistically significant (95% CI excludes 0): blue = positive, red = negative. Grey dashed arrows are not significant.&quot;</span></span>
-<span id="cb3-207"><a href="#cb3-207" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">include_graphics</span>(<span class="fu">file.path</span>(FIGS, <span class="st">&quot;interaction_network_abundance.png&quot;</span>))</span>
-<span id="cb3-208"><a href="#cb3-208" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb3-209"><a href="#cb3-209" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-210"><a href="#cb3-210" aria-hidden="true" tabindex="-1"></a><span class="fu"># GJAM: o modelo conjunto de distribuição de espécies</span></span>
-<span id="cb3-211"><a href="#cb3-211" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-212"><a href="#cb3-212" aria-hidden="true" tabindex="-1"></a>O Módulo 4 ajusta o GJAM (um modelo conjunto de distribuição de espécies) para as 44 espécies</span>
-<span id="cb3-213"><a href="#cb3-213" aria-hidden="true" tabindex="-1"></a>simultaneamente e reporta a **correlação residual** entre cada par de espécies — a co-ocorrência</span>
-<span id="cb3-214"><a href="#cb3-214" aria-hidden="true" tabindex="-1"></a>que resta depois que a resposta de habitat de cada espécie já foi contabilizada. O Módulo 4</span>
-<span id="cb3-215"><a href="#cb3-215" aria-hidden="true" tabindex="-1"></a>apresenta o GJAM apenas brevemente, já que seu foco é habitat, então vale a pena explicá-lo mais</span>
-<span id="cb3-216"><a href="#cb3-216" aria-hidden="true" tabindex="-1"></a>detalhadamente aqui, uma vez que este módulo se apoia nele diretamente para a segunda rede de</span>
-<span id="cb3-217"><a href="#cb3-217" aria-hidden="true" tabindex="-1"></a>interação abaixo.</span>
-<span id="cb3-218"><a href="#cb3-218" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-219"><a href="#cb3-219" aria-hidden="true" tabindex="-1"></a>**Como o GJAM difere de um modelo de ocupação com co-ocorrência.** O GJAM ajusta uma única</span>
-<span id="cb3-220"><a href="#cb3-220" aria-hidden="true" tabindex="-1"></a>regressão conjunta para todas as espécies simultaneamente, usando as covariáveis de habitat de</span>
-<span id="cb3-221"><a href="#cb3-221" aria-hidden="true" tabindex="-1"></a>cada espécie para prever sua própria abundância ou ocorrência, e então examina a **estrutura de</span>
-<span id="cb3-222"><a href="#cb3-222" aria-hidden="true" tabindex="-1"></a>covariância dos resíduos** — a parte da variação de cada espécie que o habitat não explica. Se</span>
-<span id="cb3-223"><a href="#cb3-223" aria-hidden="true" tabindex="-1"></a>os resíduos de duas espécies são positivamente correlacionados, elas tendem a ser mais abundantes</span>
-<span id="cb3-224"><a href="#cb3-224" aria-hidden="true" tabindex="-1"></a>juntas nos mesmos sítios *além* do que o habitat compartilhado por si só preveria; uma correlação</span>
-<span id="cb3-225"><a href="#cb3-225" aria-hidden="true" tabindex="-1"></a>residual negativa significa o oposto. Essa é uma grandeza fundamentalmente diferente tanto da</span>
-<span id="cb3-226"><a href="#cb3-226" aria-hidden="true" tabindex="-1"></a>co-ocorrência de ocupação quanto do modelo mediado pela abundância acima: o GJAM nunca pergunta</span>
-<span id="cb3-227"><a href="#cb3-227" aria-hidden="true" tabindex="-1"></a>&quot;a abundância da espécie A é motriz da abundância da espécie B&quot; (uma afirmação direcional e</span>
-<span id="cb3-228"><a href="#cb3-228" aria-hidden="true" tabindex="-1"></a>mecanística) — ele só pergunta &quot;depois do habitat, A e B ainda se movem juntas&quot; (uma associação</span>
-<span id="cb3-229"><a href="#cb3-229" aria-hidden="true" tabindex="-1"></a>não direcional, puramente estatística). Uma correlação residual do GJAM é a *assinatura de</span>
-<span id="cb3-230"><a href="#cb3-230" aria-hidden="true" tabindex="-1"></a>co-ocorrência*, não uma interação causal; ela pode surgir de uma verdadeira interação ecológica,</span>
-<span id="cb3-231"><a href="#cb3-231" aria-hidden="true" tabindex="-1"></a>ou de uma covariável não medida compartilhada que os próprios termos de habitat do GJAM não</span>
-<span id="cb3-232"><a href="#cb3-232" aria-hidden="true" tabindex="-1"></a>conseguiram capturar, ou de uma resposta compartilhada a uma terceira espécie que nem está no</span>
-<span id="cb3-233"><a href="#cb3-233" aria-hidden="true" tabindex="-1"></a>modelo — a mesma preocupação de variável omitida apontada nas citações acima, embora o GJAM pelo</span>
-<span id="cb3-234"><a href="#cb3-234" aria-hidden="true" tabindex="-1"></a>menos controle explicitamente cada covariável de habitat *medida* antes de reportar o resíduo.</span>
-<span id="cb3-235"><a href="#cb3-235" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-236"><a href="#cb3-236" aria-hidden="true" tabindex="-1"></a>**Por que usar o GJAM apesar dessa limitação.** Seu valor aqui está exatamente na escala:</span>
-<span id="cb3-237"><a href="#cb3-237" aria-hidden="true" tabindex="-1"></a>ajustar as 44 espécies conjuntamente, em um único modelo, é a única ferramenta neste pipeline</span>
-<span id="cb3-238"><a href="#cb3-238" aria-hidden="true" tabindex="-1"></a>que rastreia a comunidade *inteira* em busca de sinais candidatos de co-ocorrência em uma única</span>
-<span id="cb3-239"><a href="#cb3-239" aria-hidden="true" tabindex="-1"></a>passagem — o que é precisamente como os 8 pares sinalizados pelo GJAM acima foram identificados</span>
-<span id="cb3-240"><a href="#cb3-240" aria-hidden="true" tabindex="-1"></a>para um teste direcional e formal de abundância, em primeiro lugar. O GJAM é o instrumento de</span>
-<span id="cb3-241"><a href="#cb3-241" aria-hidden="true" tabindex="-1"></a>descoberta; o modelo mediado pela abundância é o instrumento de confirmação.</span>
-<span id="cb3-242"><a href="#cb3-242" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-243"><a href="#cb3-243" aria-hidden="true" tabindex="-1"></a><span class="fu">## A rede de interação — co-ocorrência residual do GJAM</span></span>
-<span id="cb3-244"><a href="#cb3-244" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-245"><a href="#cb3-245" aria-hidden="true" tabindex="-1"></a><span class="in">```{r fig-network-gjam}</span></span>
-<span id="cb3-246"><a href="#cb3-246" aria-hidden="true" tabindex="-1"></a><span class="co">#| echo: false</span></span>
-<span id="cb3-247"><a href="#cb3-247" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-cap: &quot;GJAM residual co-occurrence network across all 44 modelled species (|r| &gt; 0.4, habitat effects already removed). Edge width scales with |r|.&quot;</span></span>
-<span id="cb3-248"><a href="#cb3-248" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">include_graphics</span>(<span class="fu">file.path</span>(FIGS, <span class="st">&quot;gjam_network_full.png&quot;</span>))</span>
-<span id="cb3-249"><a href="#cb3-249" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb3-250"><a href="#cb3-250" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-251"><a href="#cb3-251" aria-hidden="true" tabindex="-1"></a><span class="in">```{r gjam-network-stats}</span></span>
-<span id="cb3-252"><a href="#cb3-252" aria-hidden="true" tabindex="-1"></a><span class="co">#| echo: false</span></span>
-<span id="cb3-253"><a href="#cb3-253" aria-hidden="true" tabindex="-1"></a>gcorr <span class="ot">&lt;-</span> <span class="fu">read_d</span>(<span class="st">&quot;gjam_residual_correlation.csv&quot;</span>)</span>
-<span id="cb3-254"><a href="#cb3-254" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Species pairs with |r| &gt; 0.4:&quot;</span>, <span class="dv">12</span>, <span class="st">&quot;of&quot;</span>, <span class="fu">choose</span>(<span class="dv">44</span>,<span class="dv">2</span>), <span class="st">&quot;possible pairs</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
-<span id="cb3-255"><a href="#cb3-255" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb3-256"><a href="#cb3-256" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-257"><a href="#cb3-257" aria-hidden="true" tabindex="-1"></a>A correlação residual mais forte de toda a comunidade é entre Jaguarundi e Gato-do-mato-pequeno</span>
-<span id="cb3-258"><a href="#cb3-258" aria-hidden="true" tabindex="-1"></a>(r=0.56) — dois felinos pequenos e ecologicamente semelhantes cujo resíduo positivo compartilhado</span>
-<span id="cb3-259"><a href="#cb3-259" aria-hidden="true" tabindex="-1"></a>provavelmente reflete uma preferência genuína por microhábitat compartilhado que as 11 covariáveis</span>
-<span id="cb3-260"><a href="#cb3-260" aria-hidden="true" tabindex="-1"></a>medidas não capturam completamente. Um agrupamento em torno do Jaguarundi (também correlacionado</span>
-<span id="cb3-261"><a href="#cb3-261" aria-hidden="true" tabindex="-1"></a>com Gato-maracajá, Gambá-de-orelha-branca e Mão-pelada) sugere que essa espécie ocupa o centro de</span>
-<span id="cb3-262"><a href="#cb3-262" aria-hidden="true" tabindex="-1"></a>uma guilda de pequenos carnívoros/gambás com afinidades de hábitat semelhantes. Separadamente,</span>
-<span id="cb3-263"><a href="#cb3-263" aria-hidden="true" tabindex="-1"></a>Capivara↔Onça-parda (r=0.46) é notável dado que a Onça-parda não é uma predadora especialista de</span>
-<span id="cb3-264"><a href="#cb3-264" aria-hidden="true" tabindex="-1"></a>capivaras neste sistema — é mais provável que ambas acompanhem o hábitat ripário de forma</span>
-<span id="cb3-265"><a href="#cb3-265" aria-hidden="true" tabindex="-1"></a>independente.</span>
-<span id="cb3-266"><a href="#cb3-266" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-267"><a href="#cb3-267" aria-hidden="true" tabindex="-1"></a><span class="fu">## Lendo as duas redes em conjunto</span></span>
-<span id="cb3-268"><a href="#cb3-268" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-269"><a href="#cb3-269" aria-hidden="true" tabindex="-1"></a>A rede mediada pela abundância responde *a abundância de quem move a de quem*, em um conjunto</span>
-<span id="cb3-270"><a href="#cb3-270" aria-hidden="true" tabindex="-1"></a>pequeno de pares baseado em hipóteses; a rede do GJAM responde *quem ainda co-ocorre depois que o</span>
-<span id="cb3-271"><a href="#cb3-271" aria-hidden="true" tabindex="-1"></a>hábitat é removido*, em toda a comunidade de uma só vez, sem nenhuma afirmação sobre direção ou</span>
-<span id="cb3-272"><a href="#cb3-272" aria-hidden="true" tabindex="-1"></a>mecanismo. Onde os dois concordam, a combinação é uma evidência mais forte do que qualquer um</span>
-<span id="cb3-273"><a href="#cb3-273" aria-hidden="true" tabindex="-1"></a>isoladamente: Cachorro-do-mato e Mão-pelada formam um par positivo significativo no modelo de</span>
-<span id="cb3-274"><a href="#cb3-274" aria-hidden="true" tabindex="-1"></a>abundância *e* uma das correlações residuais mais fortes de toda a comunidade (r=0.49) — dois</span>
-<span id="cb3-275"><a href="#cb3-275" aria-hidden="true" tabindex="-1"></a>métodos independentes, fazendo perguntas diferentes, convergindo para o mesmo par. Onde eles</span>
-<span id="cb3-276"><a href="#cb3-276" aria-hidden="true" tabindex="-1"></a>divergem — a maioria dos pares na pequena lista de hipóteses do modelo de abundância não tem uma</span>
-<span id="cb3-277"><a href="#cb3-277" aria-hidden="true" tabindex="-1"></a>correlação forte correspondente no GJAM, e a maioria das correlações mais fortes do GJAM (o</span>
-<span id="cb3-278"><a href="#cb3-278" aria-hidden="true" tabindex="-1"></a>agrupamento de felinos/gambás em torno do Jaguarundi, os pares de roedores) nunca foi testada</span>
-<span id="cb3-279"><a href="#cb3-279" aria-hidden="true" tabindex="-1"></a>quanto à direção — a lista restrita de pares do modelo de abundância não deve ser lida como uma</span>
-<span id="cb3-280"><a href="#cb3-280" aria-hidden="true" tabindex="-1"></a>exclusão dessas associações; elas simplesmente não estavam na lista curta de hipóteses direcionais</span>
-<span id="cb3-281"><a href="#cb3-281" aria-hidden="true" tabindex="-1"></a>testadas por este módulo.</span>
-<span id="cb3-282"><a href="#cb3-282" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-283"><a href="#cb3-283" aria-hidden="true" tabindex="-1"></a><span class="fu"># O que é deixado para módulos posteriores</span></span>
-<span id="cb3-284"><a href="#cb3-284" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-285"><a href="#cb3-285" aria-hidden="true" tabindex="-1"></a>Padrões **temporais** — o horário de atividade, as mudanças sazonais e a sobreposição temporal</span>
-<span id="cb3-286"><a href="#cb3-286" aria-hidden="true" tabindex="-1"></a>entre predador e presa — são abordados no Módulo 7, que retoma a questão da interação a partir de</span>
-<span id="cb3-287"><a href="#cb3-287" aria-hidden="true" tabindex="-1"></a>um ângulo diferente: não *se* a abundância de uma espécie afeta a de outra, mas *quando* cada</span>
-<span id="cb3-288"><a href="#cb3-288" aria-hidden="true" tabindex="-1"></a>espécie está ativa em relação às outras.</span></code></pre></div><button title="Copiar para a área de transferência" class="code-copy-button" data-in-quarto-modal><i class="bi"></i></button></div>
+<span id="cb3-198"><a href="#cb3-198" aria-hidden="true" tabindex="-1"></a>Duas duplas da lista a priori original em nível de câmera — Onça-pintada→Queixada e</span>
+<span id="cb3-199"><a href="#cb3-199" aria-hidden="true" tabindex="-1"></a>Onça-pintada→Cateto — **não** são mostradas aqui: em nível de array, suas estimativas pontuais</span>
+<span id="cb3-200"><a href="#cb3-200" aria-hidden="true" tabindex="-1"></a>mantêm a mesma direção negativa observada em nível de câmera, mas os intervalos de credibilidade</span>
+<span id="cb3-201"><a href="#cb3-201" aria-hidden="true" tabindex="-1"></a>de 95% se ampliam o suficiente para cruzar o zero (Queixada: -5,17 a 2,07; Cateto: -1,24 a 0,42).</span>
+<span id="cb3-202"><a href="#cb3-202" aria-hidden="true" tabindex="-1"></a>Esse é o mesmo padrão de perda de poder documentado ao longo da comparação câmera-vs-array deste</span>
+<span id="cb3-203"><a href="#cb3-203" aria-hidden="true" tabindex="-1"></a>módulo — 60 réplicas espaciais carregam menos informação do que várias centenas de câmeras — e é</span>
+<span id="cb3-204"><a href="#cb3-204" aria-hidden="true" tabindex="-1"></a>uma consequência real, embora decepcionante, da agregação, e não um erro em nenhum dos ajustes.</span>
+<span id="cb3-205"><a href="#cb3-205" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-206"><a href="#cb3-206" aria-hidden="true" tabindex="-1"></a>**Uma ressalva sobre duas das sete curvas.** Neste modelo, cada indivíduo extra da espécie</span>
+<span id="cb3-207"><a href="#cb3-207" aria-hidden="true" tabindex="-1"></a>motriz adiciona a *mesma quantidade fixa* à abundância da espécie respondente na escala</span>
+<span id="cb3-208"><a href="#cb3-208" aria-hidden="true" tabindex="-1"></a>logarítmica — o que significa que, na escala natural, a abundância prevista da respondente não</span>
+<span id="cb3-209"><a href="#cb3-209" aria-hidden="true" tabindex="-1"></a>apenas sobe de forma constante conforme a motriz se torna mais comum, ela se acumula como juros</span>
+<span id="cb3-210"><a href="#cb3-210" aria-hidden="true" tabindex="-1"></a>de um empréstimo. Adicionar alguns indivíduos extras da motriz pode fazer a previsão disparar</span>
+<span id="cb3-211"><a href="#cb3-211" aria-hidden="true" tabindex="-1"></a>para cima em vez de subir de forma constante. Para a maioria das duplas isso nunca importa na</span>
+<span id="cb3-212"><a href="#cb3-212" aria-hidden="true" tabindex="-1"></a>prática, porque nenhum array tem indivíduos suficientes da espécie motriz para alcançar essa</span>
+<span id="cb3-213"><a href="#cb3-213" aria-hidden="true" tabindex="-1"></a>faixa de disparada: quatro das 7 duplas nunca empurram a respondente ajustada além de um teto</span>
+<span id="cb3-214"><a href="#cb3-214" aria-hidden="true" tabindex="-1"></a>plausível (500 indivíduos/array) em nenhum ponto dos dados observados, e mais uma (Tapir-da-</span>
+<span id="cb3-215"><a href="#cb3-215" aria-hidden="true" tabindex="-1"></a>planície→Queixada) só faz isso em 4 dos 60 arrays. Para **Jaguatirica→Cutia-de-Azara** e</span>
+<span id="cb3-216"><a href="#cb3-216" aria-hidden="true" tabindex="-1"></a>**Cachorro-do-mato→Mão-pelada**, porém, mais da metade dos 60 arrays (34 e 39) têm abundância da</span>
+<span id="cb3-217"><a href="#cb3-217" aria-hidden="true" tabindex="-1"></a>motriz alta o suficiente para que a abundância prevista da respondente dispare além de qualquer</span>
+<span id="cb3-218"><a href="#cb3-218" aria-hidden="true" tabindex="-1"></a>número realista de indivíduos por array. Essa é uma propriedade matemática desses dois</span>
+<span id="cb3-219"><a href="#cb3-219" aria-hidden="true" tabindex="-1"></a>coeficientes — não um erro nos dados ou no ajuste. As curvas limitadas e em escala logarítmica</span>
+<span id="cb3-220"><a href="#cb3-220" aria-hidden="true" tabindex="-1"></a>mostradas aqui são a forma honesta de representar esse padrão; apenas não leia a extremidade</span>
+<span id="cb3-221"><a href="#cb3-221" aria-hidden="true" tabindex="-1"></a>superior de nenhuma das curvas como uma previsão literal de abundância. O resultado real para</span>
+<span id="cb3-222"><a href="#cb3-222" aria-hidden="true" tabindex="-1"></a>ambas as duplas — de que a interação é positiva e estatisticamente credível — vem do posterior</span>
+<span id="cb3-223"><a href="#cb3-223" aria-hidden="true" tabindex="-1"></a>completo do modelo, não desta curva, e não é afetado.</span>
+<span id="cb3-224"><a href="#cb3-224" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-225"><a href="#cb3-225" aria-hidden="true" tabindex="-1"></a><span class="fu">## A rede de interações — mediada pela abundância</span></span>
+<span id="cb3-226"><a href="#cb3-226" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-227"><a href="#cb3-227" aria-hidden="true" tabindex="-1"></a><span class="in">```{r fig-network-abundance}</span></span>
+<span id="cb3-228"><a href="#cb3-228" aria-hidden="true" tabindex="-1"></a><span class="co">#| echo: false</span></span>
+<span id="cb3-229"><a href="#cb3-229" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-cap: &quot;Abundance-mediated species interaction network, all 30 array-level driver→responder pairs. Solid coloured arrows are statistically significant (95% CI excludes 0): blue = positive, red = negative. Grey dashed arrows are not significant.&quot;</span></span>
+<span id="cb3-230"><a href="#cb3-230" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">include_graphics</span>(<span class="fu">file.path</span>(FIGS, <span class="st">&quot;interaction_network_abundance.png&quot;</span>))</span>
+<span id="cb3-231"><a href="#cb3-231" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb3-232"><a href="#cb3-232" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-233"><a href="#cb3-233" aria-hidden="true" tabindex="-1"></a><span class="fu"># GJAM: o modelo de distribuição conjunta de espécies</span></span>
+<span id="cb3-234"><a href="#cb3-234" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-235"><a href="#cb3-235" aria-hidden="true" tabindex="-1"></a>O Módulo 4 ajusta o GJAM (um modelo de distribuição conjunta de espécies) para as 44 espécies</span>
+<span id="cb3-236"><a href="#cb3-236" aria-hidden="true" tabindex="-1"></a>simultaneamente e reporta a **correlação residual** entre cada par — a co-ocorrência que resta</span>
+<span id="cb3-237"><a href="#cb3-237" aria-hidden="true" tabindex="-1"></a>depois que a resposta de cada espécie ao seu próprio habitat já foi contabilizada. O Módulo 4</span>
+<span id="cb3-238"><a href="#cb3-238" aria-hidden="true" tabindex="-1"></a>apresenta o GJAM apenas brevemente, já que seu foco é o habitat, então vale a pena explicá-lo</span>
+<span id="cb3-239"><a href="#cb3-239" aria-hidden="true" tabindex="-1"></a>mais detalhadamente aqui, já que este módulo se apoia nele diretamente para a segunda rede de</span>
+<span id="cb3-240"><a href="#cb3-240" aria-hidden="true" tabindex="-1"></a>interação abaixo.</span>
+<span id="cb3-241"><a href="#cb3-241" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-242"><a href="#cb3-242" aria-hidden="true" tabindex="-1"></a>**Como o GJAM difere de um modelo de ocupação com co-ocorrência.** O GJAM ajusta uma única</span>
+<span id="cb3-243"><a href="#cb3-243" aria-hidden="true" tabindex="-1"></a>regressão conjunta para todas as espécies simultaneamente, usando as covariáveis de habitat de</span>
+<span id="cb3-244"><a href="#cb3-244" aria-hidden="true" tabindex="-1"></a>cada espécie para prever sua própria abundância ou ocorrência, e então examina a **estrutura de</span>
+<span id="cb3-245"><a href="#cb3-245" aria-hidden="true" tabindex="-1"></a>covariância dos resíduos** — a parte da variação de cada espécie que o habitat não explica. Se</span>
+<span id="cb3-246"><a href="#cb3-246" aria-hidden="true" tabindex="-1"></a>os resíduos de duas espécies são positivamente correlacionados, elas tendem a ser mais</span>
+<span id="cb3-247"><a href="#cb3-247" aria-hidden="true" tabindex="-1"></a>abundantes juntas nos mesmos locais *além* do que o habitat compartilhado por si só preveria;</span>
+<span id="cb3-248"><a href="#cb3-248" aria-hidden="true" tabindex="-1"></a>uma correlação residual negativa significa o oposto. Essa é uma grandeza fundamentalmente</span>
+<span id="cb3-249"><a href="#cb3-249" aria-hidden="true" tabindex="-1"></a>diferente tanto da co-ocorrência de ocupação quanto do modelo mediado pela abundância acima: o</span>
+<span id="cb3-250"><a href="#cb3-250" aria-hidden="true" tabindex="-1"></a>GJAM nunca pergunta &quot;a abundância da espécie A impulsiona a abundância da espécie B&quot; (uma</span>
+<span id="cb3-251"><a href="#cb3-251" aria-hidden="true" tabindex="-1"></a>afirmação direcional e mecanística) — ele só pergunta &quot;depois do habitat, A e B ainda se movem</span>
+<span id="cb3-252"><a href="#cb3-252" aria-hidden="true" tabindex="-1"></a>juntas?&quot; (uma associação não direcional, puramente estatística). Uma correlação residual do</span>
+<span id="cb3-253"><a href="#cb3-253" aria-hidden="true" tabindex="-1"></a>GJAM é a *assinatura de co-ocorrência*, não uma interação causal; ela pode surgir de uma</span>
+<span id="cb3-254"><a href="#cb3-254" aria-hidden="true" tabindex="-1"></a>verdadeira interação ecológica, ou de uma covariável não medida compartilhada que os próprios</span>
+<span id="cb3-255"><a href="#cb3-255" aria-hidden="true" tabindex="-1"></a>termos de habitat do GJAM não conseguiram capturar, ou de uma resposta compartilhada a uma</span>
+<span id="cb3-256"><a href="#cb3-256" aria-hidden="true" tabindex="-1"></a>terceira espécie que não está no modelo — a mesma preocupação de variável omitida apontada nas</span>
+<span id="cb3-257"><a href="#cb3-257" aria-hidden="true" tabindex="-1"></a>citações acima, embora o GJAM ao menos controle explicitamente todas as covariáveis de habitat</span>
+<span id="cb3-258"><a href="#cb3-258" aria-hidden="true" tabindex="-1"></a>*medidas* antes de reportar o resíduo.</span>
+<span id="cb3-259"><a href="#cb3-259" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-260"><a href="#cb3-260" aria-hidden="true" tabindex="-1"></a>::: {.callout-tip}</span>
+<span id="cb3-261"><a href="#cb3-261" aria-hidden="true" tabindex="-1"></a><span class="fu">## A analogia do Spotify</span></span>
+<span id="cb3-262"><a href="#cb3-262" aria-hidden="true" tabindex="-1"></a>Um serviço de música como o Spotify recomenda músicas de duas formas. A forma óbvia é por</span>
+<span id="cb3-263"><a href="#cb3-263" aria-hidden="true" tabindex="-1"></a>**atributos**: você gosta de faixas rápidas e com muita guitarra, então aqui estão mais faixas</span>
+<span id="cb3-264"><a href="#cb3-264" aria-hidden="true" tabindex="-1"></a>assim — essa é a parte de *habitat* do nosso modelo, combinando uma espécie às características</span>
+<span id="cb3-265"><a href="#cb3-265" aria-hidden="true" tabindex="-1"></a>ambientais que ela prefere. Mas a forma poderosa é a **filtragem colaborativa**: &quot;pessoas que</span>
+<span id="cb3-266"><a href="#cb3-266" aria-hidden="true" tabindex="-1"></a>gostaram dessa música também gostaram daquela&quot;, aprendida puramente a partir de padrões de</span>
+<span id="cb3-267"><a href="#cb3-267" aria-hidden="true" tabindex="-1"></a>escuta em conjunto, sem saber nada sobre as músicas em si. Um modelo conjunto faz exatamente</span>
+<span id="cb3-268"><a href="#cb3-268" aria-hidden="true" tabindex="-1"></a>isso para espécies. Depois de usar o habitat para explicar o que pode, ele observa o que</span>
+<span id="cb3-269"><a href="#cb3-269" aria-hidden="true" tabindex="-1"></a>*resta* — quais espécies continuam aparecendo nas mesmas câmeras com mais frequência do que</span>
+<span id="cb3-270"><a href="#cb3-270" aria-hidden="true" tabindex="-1"></a>suas preferências de habitat compartilhadas preveriam — e interpreta isso como uma associação</span>
+<span id="cb3-271"><a href="#cb3-271" aria-hidden="true" tabindex="-1"></a>entre espécies. A matriz de correlação residual é o equivalente, em armadilhas fotográficas, de</span>
+<span id="cb3-272"><a href="#cb3-272" aria-hidden="true" tabindex="-1"></a>&quot;câmeras que fotografaram esta espécie também fotografaram aquela&quot;.</span>
+<span id="cb3-273"><a href="#cb3-273" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb3-274"><a href="#cb3-274" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-275"><a href="#cb3-275" aria-hidden="true" tabindex="-1"></a>**Por que usar o GJAM apesar dessa limitação.** Seu valor aqui está exatamente na sua escala:</span>
+<span id="cb3-276"><a href="#cb3-276" aria-hidden="true" tabindex="-1"></a>ajustar as 44 espécies conjuntamente, em um único modelo, é a única ferramenta neste pipeline</span>
+<span id="cb3-277"><a href="#cb3-277" aria-hidden="true" tabindex="-1"></a>que rastreia a comunidade *inteira* em busca de sinais candidatos de co-ocorrência em uma única</span>
+<span id="cb3-278"><a href="#cb3-278" aria-hidden="true" tabindex="-1"></a>passada — e foi precisamente assim que os 8 pares sinalizados pelo GJAM acima foram identificados</span>
+<span id="cb3-279"><a href="#cb3-279" aria-hidden="true" tabindex="-1"></a>para um teste direcional formal de abundância, em primeiro lugar. O GJAM é o instrumento de</span>
+<span id="cb3-280"><a href="#cb3-280" aria-hidden="true" tabindex="-1"></a>descoberta; o modelo mediado pela abundância é o instrumento de confirmação.</span>
+<span id="cb3-281"><a href="#cb3-281" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-282"><a href="#cb3-282" aria-hidden="true" tabindex="-1"></a><span class="fu">## A rede de interação — co-ocorrência residual do GJAM</span></span>
+<span id="cb3-283"><a href="#cb3-283" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-284"><a href="#cb3-284" aria-hidden="true" tabindex="-1"></a><span class="in">```{r fig-network-gjam}</span></span>
+<span id="cb3-285"><a href="#cb3-285" aria-hidden="true" tabindex="-1"></a><span class="co">#| echo: false</span></span>
+<span id="cb3-286"><a href="#cb3-286" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-cap: &quot;GJAM residual co-occurrence network across all 44 modelled species (|r| &gt; 0.4, habitat effects already removed). Edge width scales with |r|.&quot;</span></span>
+<span id="cb3-287"><a href="#cb3-287" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">include_graphics</span>(<span class="fu">file.path</span>(FIGS, <span class="st">&quot;gjam_network_full.png&quot;</span>))</span>
+<span id="cb3-288"><a href="#cb3-288" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb3-289"><a href="#cb3-289" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-290"><a href="#cb3-290" aria-hidden="true" tabindex="-1"></a><span class="in">```{r gjam-network-stats}</span></span>
+<span id="cb3-291"><a href="#cb3-291" aria-hidden="true" tabindex="-1"></a><span class="co">#| echo: false</span></span>
+<span id="cb3-292"><a href="#cb3-292" aria-hidden="true" tabindex="-1"></a>gcorr <span class="ot">&lt;-</span> <span class="fu">read_d</span>(<span class="st">&quot;gjam_residual_correlation.csv&quot;</span>)</span>
+<span id="cb3-293"><a href="#cb3-293" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Species pairs with |r| &gt; 0.4:&quot;</span>, <span class="dv">12</span>, <span class="st">&quot;of&quot;</span>, <span class="fu">choose</span>(<span class="dv">44</span>,<span class="dv">2</span>), <span class="st">&quot;possible pairs</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb3-294"><a href="#cb3-294" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb3-295"><a href="#cb3-295" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-296"><a href="#cb3-296" aria-hidden="true" tabindex="-1"></a>A correlação residual mais forte de toda a comunidade é entre Jaguarundi e Gato-do-mato-pequeno</span>
+<span id="cb3-297"><a href="#cb3-297" aria-hidden="true" tabindex="-1"></a>(r=0.56) — dois felinos pequenos e ecologicamente semelhantes cujo resíduo positivo compartilhado</span>
+<span id="cb3-298"><a href="#cb3-298" aria-hidden="true" tabindex="-1"></a>provavelmente reflete uma preferência genuína por microhábitat compartilhado que as 11 covariáveis</span>
+<span id="cb3-299"><a href="#cb3-299" aria-hidden="true" tabindex="-1"></a>medidas não capturam completamente. Um agrupamento em torno do Jaguarundi (também correlacionado</span>
+<span id="cb3-300"><a href="#cb3-300" aria-hidden="true" tabindex="-1"></a>com Gato-maracajá, Gambá-de-orelha-branca e Mão-pelada) sugere que essa espécie ocupa o centro de</span>
+<span id="cb3-301"><a href="#cb3-301" aria-hidden="true" tabindex="-1"></a>uma guilda de pequenos carnívoros/gambás com afinidades de hábitat semelhantes. Separadamente,</span>
+<span id="cb3-302"><a href="#cb3-302" aria-hidden="true" tabindex="-1"></a>Capivara↔Onça-parda (r=0.46) é notável dado que a Onça-parda não é uma predadora especialista de</span>
+<span id="cb3-303"><a href="#cb3-303" aria-hidden="true" tabindex="-1"></a>capivaras neste sistema — é mais provável que ambas acompanhem o hábitat ripário de forma</span>
+<span id="cb3-304"><a href="#cb3-304" aria-hidden="true" tabindex="-1"></a>independente.</span>
+<span id="cb3-305"><a href="#cb3-305" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-306"><a href="#cb3-306" aria-hidden="true" tabindex="-1"></a><span class="fu">## Lendo as duas redes em conjunto</span></span>
+<span id="cb3-307"><a href="#cb3-307" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-308"><a href="#cb3-308" aria-hidden="true" tabindex="-1"></a>A rede mediada pela abundância responde *a abundância de quem move a de quem*, em um conjunto</span>
+<span id="cb3-309"><a href="#cb3-309" aria-hidden="true" tabindex="-1"></a>pequeno de pares baseado em hipóteses; a rede do GJAM responde *quem ainda co-ocorre depois que o</span>
+<span id="cb3-310"><a href="#cb3-310" aria-hidden="true" tabindex="-1"></a>hábitat é removido*, em toda a comunidade de uma só vez, sem nenhuma afirmação sobre direção ou</span>
+<span id="cb3-311"><a href="#cb3-311" aria-hidden="true" tabindex="-1"></a>mecanismo. Onde os dois concordam, a combinação é uma evidência mais forte do que qualquer um</span>
+<span id="cb3-312"><a href="#cb3-312" aria-hidden="true" tabindex="-1"></a>isoladamente: Cachorro-do-mato e Mão-pelada formam um par positivo significativo no modelo de</span>
+<span id="cb3-313"><a href="#cb3-313" aria-hidden="true" tabindex="-1"></a>abundância *e* uma das correlações residuais mais fortes de toda a comunidade (r=0.49) — dois</span>
+<span id="cb3-314"><a href="#cb3-314" aria-hidden="true" tabindex="-1"></a>métodos independentes, fazendo perguntas diferentes, convergindo para o mesmo par. Onde eles</span>
+<span id="cb3-315"><a href="#cb3-315" aria-hidden="true" tabindex="-1"></a>divergem — a maioria dos pares na pequena lista de hipóteses do modelo de abundância não tem uma</span>
+<span id="cb3-316"><a href="#cb3-316" aria-hidden="true" tabindex="-1"></a>correlação forte correspondente no GJAM, e a maioria das correlações mais fortes do GJAM (o</span>
+<span id="cb3-317"><a href="#cb3-317" aria-hidden="true" tabindex="-1"></a>agrupamento de felinos/gambás em torno do Jaguarundi, os pares de roedores) nunca foi testada</span>
+<span id="cb3-318"><a href="#cb3-318" aria-hidden="true" tabindex="-1"></a>quanto à direção — a lista restrita de pares do modelo de abundância não deve ser lida como uma</span>
+<span id="cb3-319"><a href="#cb3-319" aria-hidden="true" tabindex="-1"></a>exclusão dessas associações; elas simplesmente não estavam na lista curta de hipóteses direcionais</span>
+<span id="cb3-320"><a href="#cb3-320" aria-hidden="true" tabindex="-1"></a>testadas por este módulo.</span>
+<span id="cb3-321"><a href="#cb3-321" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-322"><a href="#cb3-322" aria-hidden="true" tabindex="-1"></a><span class="fu"># O que é deixado para módulos posteriores</span></span>
+<span id="cb3-323"><a href="#cb3-323" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-324"><a href="#cb3-324" aria-hidden="true" tabindex="-1"></a>Padrões **temporais** — o horário de atividade, as mudanças sazonais e a sobreposição temporal</span>
+<span id="cb3-325"><a href="#cb3-325" aria-hidden="true" tabindex="-1"></a>entre predador e presa — são abordados no Módulo 7, que retoma a questão da interação a partir de</span>
+<span id="cb3-326"><a href="#cb3-326" aria-hidden="true" tabindex="-1"></a>um ângulo diferente: não *se* a abundância de uma espécie afeta a de outra, mas *quando* cada</span>
+<span id="cb3-327"><a href="#cb3-327" aria-hidden="true" tabindex="-1"></a>espécie está ativa em relação às outras.</span></code></pre></div><button title="Copiar para a área de transferência" class="code-copy-button" data-in-quarto-modal><i class="bi"></i></button></div>
 </div></div></div></div></div>
 </div> <!-- /content -->
 
