@@ -1,0 +1,559 @@
+---
+title: "Módulo 5 — Predição e Mapeamento"
+subtitle: "Pipeline de análise de armadilhas fotográficas do Snapshot Brasil"
+lang: pt
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    code-fold: false
+    code-tools: true
+    theme: cosmo
+    fig-width: 9
+    fig-height: 6
+    embed-resources: true
+    mainfont: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
+execute:
+  warning: false
+  message: false
+knitr:
+  opts_chunk:
+    comment: "#>"
+params:
+  run_live: false
+---
+
+```{r setup}
+#| include: false
+RUN_LIVE <- isTRUE(params$run_live)
+library(data.table)
+DATA <- "mod5_data"
+FIGS <- "mod5_figs"
+read_d <- function(f) fread(file.path(DATA, f))
+```
+
+::: {.callout-important}
+## Como usar este notebook
+A grade nacional de predição (17.603 células) foi construída extraindo covariáveis de habitat
+do Google Earth Engine para cada célula, e então passando cada célula pelo modelo de ocupação
+ajustado — processo pesado demais e dependente demais de uma conta de serviço do GEE para
+executar em aula. Essas etapas são **mostradas como código, mas não executadas**. Este notebook
+**carrega a grade de predição entregue** e calcula as partes que tornam o método transparente
+em tempo real: a triagem de adequação do modelo (AUC), os diagnósticos de extrapolação
+(MESS + cobertura de covariáveis), a máscara de distribuição, a regra composta de
+presença/ausência e a estimativa de área ocupada por espécie — para que você veja exatamente
+como um modelo ajustado se torna um mapa nacional, e onde ele *não* deve ser confiável.
+:::
+
+# O que este módulo faz
+
+O Módulo 4 estimou um **modelo de ocupação em nível de comunidade**: um único ajuste conjunto, em todas as 44
+espécies de mamíferos simultaneamente, ligando onze covariáveis de habitat e detecção à probabilidade
+de ocupação ($\psi$) e de detecção ($p$) de cada espécie. Os coeficientes de cada espécie
+são parcialmente contraídos ("pooled") em direção a uma média em nível de comunidade, de modo que uma espécie rara com poucas detecções
+ainda recebe uma estimativa informada em vez de uma estimativa instável. Este módulo pega esse modelo
+ajustado e o transforma em um **mapa de ocupação prevista em todo o Brasil**, em cada ponto de uma
+grade regular, tenha ou não havido uma câmera ali.
+
+Essa etapa é aritmética, mas confiar no resultado não é automático. Um modelo ajustado em sítios de câmeras
+florestados, protegidos e de fácil acesso não tem garantia nenhuma de se aplicar a um canto
+remoto, desmatado e sem estradas do país que ele nunca viu. Este módulo constrói os mapas
+nacionais e, na mesma medida, constrói os diagnósticos que indicam onde esses mapas podem e não podem
+ser confiados.
+
+## Por que o modelo de comunidade, em nível de câmera
+
+Duas escolhas de design merecem ser explicitadas desde já, pois moldam tudo o que vem a seguir.
+
+**Comunidade em vez de espécie única.** Um modelo de comunidade conjunto toma emprestada força estatística
+entre espécies: a resposta de habitat de uma espécie rara é parcialmente informada pelo
+padrão em nível de comunidade, em vez de estimada apenas a partir de seus próprios dados escassos. Neste conjunto de dados
+o ganho é concreto -- espécies com detecções insuficientes para sustentar um
+ajuste independente estável (a onça-pintada entre elas) obtêm coeficientes com comportamento
+substancialmente melhor sob a contração parcial, ao custo de encolher um pouco a estimativa de cada espécie
+em direção à média da comunidade. O exemplo trabalhado ao final deste módulo detalha exatamente como fica
+essa troca para a onça-pintada.
+
+**Nível de câmera, não nível de array.** O modelo usado aqui é ajustado no ponto individual da
+câmera (~1.100 sítios), não agregado ao array de monitoramento mais grosseiro de ~20 km. O ajuste
+em nível de câmera tem muito mais poder estatístico (aproximadamente 18x mais réplicas espaciais) e uma parcela
+menor da grade nacional cai fora de sua envoltória de treinamento.
+
+```{r auc-screen}
+#| echo: true
+auc <- read_d("all_species_auc_community_camera.csv")
+cat("Species modelled:", nrow(auc), "\n")
+cat("Median AUC:", round(median(auc$auc_camera_comm, na.rm=TRUE), 3), "\n")
+cat("Species at AUC >= 0.70:", sum(auc$auc_camera_comm >= 0.70, na.rm=TRUE),
+    "| below 0.70:", sum(auc$auc_camera_comm < 0.70, na.rm=TRUE), "\n")
+```
+
+# Construindo a grade de predição
+
+A superfície de predição é uma grade regular de pontos com **espaçamento de 0,2 grau (~20 km)**
+cobrindo a caixa delimitadora do Brasil, recortada para a massa terrestre -- **17.603 células**.
+Cada célula é um local onde o modelo ajustado é avaliado, então cada uma precisa das *mesmas
+onze covariáveis* nas quais o modelo comunitário foi ajustado, medidas *exatamente da mesma
+forma* que nos pontos de câmera.
+
+Esse último ponto é o que determina o sucesso ou o fracasso de uma projeção: uma covariável
+medida de forma diferente na grade e nas câmeras é uma variável diferente, e os coeficientes
+do modelo deixam de valer. Por isso, cada covariável da grade é extraída da mesma fonte no
+Earth Engine, com a mesma definição, que sua contraparte nos pontos de câmera:
+
+| Covariável | Fonte | Definição |
+|---|---|---|
+| forest, savanna, pasture, cropland % | MapBiomas Coleção 10 (2024), 30 m | % de um buffer de 100 m nas classes mapeadas |
+| native vegetation % | MapBiomas Coleção 10 (2024), 30 m | % de um buffer de 1 km em classes nativas |
+| mean annual temperature | WorldClim v1 BIO1 | valor pontual (graus C) |
+| annual precipitation | WorldClim v1 BIO12 | valor pontual (mm) |
+| protected-area status | WDPA (Brasil, UCs designadas) | ponto dentro de um polígono de UC (0/1) |
+| built-up surface | JRC GHSL built-surface, 2020 | fração média de superfície construída em um buffer de 5 km |
+| distance to the nearest mapped road | banco de dados global de rodovias GRIP4 | transformada de distância euclidiana (m) |
+| distance to the nearest water/flooded surface | classes de água e floresta alagada do MapBiomas | transformada de distância euclidiana (m) |
+
+As três últimas linhas -- urbanização, distância a rodovias, distância a corpos d'água -- são
+extraídas da mesma forma em cada uma das 17.603 células da grade, assim como nos pontos de
+câmera: um raster de transformada de distância é construído uma única vez sobre a camada de
+feições relevante (rodovias, ou o conjunto de classes de água/floresta alagada do MapBiomas),
+e então lido em cada ponto. Quando a vizinhança de busca da transformada não encontrou nenhuma
+feição-alvo, a distância é limitada ao valor mais profundo que *foi* efetivamente medido, em
+vez de deixada como um máximo artificial, e a célula é sinalizada com um indicador sentinela
+para que um valor limitado nunca seja confundido silenciosamente com um valor medido com
+precisão.
+
+Cada covariável da grade foi verificada para reproduzir exatamente os valores dos pontos de
+câmera onde os dois se sobrepõem, de modo que a grade e os dados de treinamento estejam na
+mesma escala. As covariáveis são então padronizadas com as **mesmas médias e desvios-padrão**
+usados no ajuste do modelo -- não os da própria grade -- porque os coeficientes estão nessa
+escala de treinamento.
+
+```{r grid-load}
+#| echo: true
+grid <- read_d("national_grid_covariates_11cov.csv")
+cat("Grid cells:", nrow(grid), "at 0.2 degrees (~20 km)\n")
+cat("Cells with complete camera-level (11) covariates:", sum(complete.cases(
+      grid[, .(forest_100m, savanna_100m, pasture_100m, cropland_100m,
+               native_veg_1000m, temp_mean_C, precip_annual_mm, in_pa,
+               ghsl_built_5000m, dist_road_m, dist_water_m)])), "\n")
+```
+
+## A equação de predição como uma calculadora de raster
+
+Com as camadas de covariáveis em mãos, a predição é uma operação aritmética. Para a espécie
+$s$, com coeficientes ajustados do modelo comunitário $\hat\beta_s$ e intercepto de espécie
+$\hat\alpha_s$, cada célula da grade $i$ recebe
+
+$$\hat\psi_{is} = \text{logit}^{-1}\!\left(\hat\alpha_s + \sum_k \hat\beta_{sk}\, z_{ik}\right),
+\qquad \text{logit}^{-1}(u)=\frac{1}{1+e^{-u}}$$
+
+em que $z_{ik}$ é o valor padronizado da covariável $k$ na célula $i$, comum a todas as
+espécies porque é uma propriedade do local, não da espécie. Leia o lado direito da equação
+como uma sequência de operações de raster, da mesma forma que uma "calculadora de raster" de
+um SIG a construiria, camada por camada:
+
+1. Toma-se o raster padronizado de cobertura florestal e multiplica-se cada pixel por
+   $\hat\beta_{s,\text{forest}}$.
+2. Faz-se o mesmo para cada uma das demais camadas de covariáveis e seu respectivo
+   coeficiente específico da espécie.
+3. Somam-se todos os rasters resultantes, pixel a pixel, mais o intercepto da espécie -- isso
+   é o **preditor linear**, um raster na escala logit, ilimitado e difícil de interpretar
+   diretamente.
+4. Aplica-se a função logit inversa a cada pixel desse raster. O resultado é $\hat\psi_s$,
+   limitado entre 0 e 1 por construção, e interpretável como uma probabilidade de ocupação
+   para a espécie $s$.
+
+Repetindo esse processo para cada uma das 44 espécies e somando os rasters de $\hat\psi$
+resultantes, obtém-se uma **superfície de riqueza comunitária** -- o número esperado de
+espécies presentes em cada célula da grade.
+
+```{r prediction-example}
+#| echo: true
+psi_comm <- read_d("grid_psi_community_camera_11cov.csv")
+sp_cols <- setdiff(names(psi_comm), c("sid","lon","lat","richness_camera_comm",
+                                        "mess_camera_comm","extrapolating_camera_comm",
+                                        "cell_area_km2","n_present_thresholded"))
+cat("Community psi predictions:", nrow(psi_comm), "grid cells x", length(sp_cols), "species\n")
+cat("Richness range:", round(min(psi_comm$richness_camera_comm), 3), "to",
+    round(max(psi_comm$richness_camera_comm), 2), "expected species per cell\n")
+```
+
+# Devemos fazer essas predições?
+
+Antes de mapear qualquer coisa, duas perguntas decidem se uma predição vale a pena ser confiada. Este
+módulo trata essas perguntas como um filtro explícito de duas camadas, aplicado a cada espécie antes que
+seu mapa seja exibido.
+
+## Camada 1 -- cobrimos o espaço de covariáveis? (MESS)
+
+Mesmo um bom modelo só é confiável onde o ambiente da grade se assemelha ao ambiente que as
+câmeras amostraram. Predizer para uma combinação inédita de clima, cobertura do solo ou
+acessibilidade é **extrapolação** -- o modelo está adivinhando fora do seu intervalo de
+treinamento, e a inversa da logit ainda vai devolver diligentemente um número de aparência
+confiante, independentemente disso.
+
+**MESS** (Multivariate Environmental Similarity Surface; Elith et al. 2010) mede isso em um
+nível básico e intuitivo. Para cada covariável, o MESS pergunta: o valor desta célula da
+grade está dentro do intervalo que as câmeras cobriram para essa covariável, ou fora dele --
+e, se fora, por quanto? Concretamente, para a covariável $k$ com intervalo de treinamento
+$[\min_k, \max_k]$ e a posição percentual $f$ de uma célula dentro desse intervalo, o escore
+de similaridade é
+
+$$
+\text{sim}_k =
+\begin{cases}
+f & f < 0 \text{ (abaixo do mínimo de treinamento)}\\
+2f & 0 \le f \le 50\\
+2(100-f) & 50 < f < 100\\
+100-f & f \ge 100 \text{ (acima do máximo de treinamento)}
+\end{cases}
+$$
+
+O escore MESS geral de uma célula é o **mais negativo** de suas similaridades por covariável
+-- uma única covariável muito fora do intervalo já é suficiente para sinalizar uma célula
+como extrapolação, mesmo que todas as outras covariáveis correspondam perfeitamente aos
+dados de treinamento. MESS positivo significa que todas as covariáveis daquela célula estão
+dentro do envelope amostrado; **MESS negativo significa que pelo menos uma covariável está
+fora dele**, ou seja, o modelo está extrapolando ali.
+
+```{r mess-summary}
+#| echo: true
+cat("Grid cells extrapolating on the 11-covariate space (MESS < 0):",
+    sum(grid$extrapolating, na.rm=TRUE),
+    sprintf("(%.1f%% of the grid)\n", 100*mean(grid$extrapolating, na.rm=TRUE)))
+```
+
+![Diagnósticos de extrapolação no espaço completo de 11 covariáveis. Superior-esquerda: a superfície MESS -- células azuis estão dentro do envelope de covariáveis amostrado, células vermelhas extrapolam. Superior-meio: a mesma informação como uma máscara vermelho/azul. Painéis restantes: biplots e histogramas do espaço de covariáveis, cinza = todas as células da grade, vermelho = sítios de câmera.](mod5_figs/mess_extrapolation_11cov.png){#fig-mess}
+
+Aproximadamente um terço da grade extrapola em pelo menos uma das onze covariáveis. Os
+biplots tornam as lacunas de amostragem concretas em um nível básico: o painel de
+temperatura x precipitação mostra os sítios de câmera agrupados longe do extremo quente e
+úmido da Amazônia; o painel de desenvolvimento x pastagem e o painel de distância a
+estradas/água mostram as câmeras concentradas em locais mais acessíveis e mais próximos de
+infraestrutura do que o Brasil como um todo; e o histograma de floresta mostra que os sítios
+apresentam um viés muito mais florestado do que a média nacional. Desenvolvimento, acesso
+por estradas e proximidade de água acabam sendo as covariáveis que empurram o maior número
+adicional de células para a extrapolação -- regiões remotas e sem estradas no interior são
+exatamente onde a instalação de câmeras é mais difícil, então também são onde o modelo tem
+menos base para uma predição confiante.
+
+::: {.callout-tip}
+## Leia o vermelho como uma lista de tarefas de amostragem
+A superfície de extrapolação não é apenas uma ressalva -- é um **mapa de onde o Snapshot
+Brasil mais precisa de câmeras nos próximos anos**. Uma célula é vermelha precisamente
+porque nenhuma câmera atual amostra sua combinação de clima, cobertura do solo e
+acessibilidade, então o modelo está adivinhando ali. Adicionar instalações nessas regiões
+nas próximas temporadas reduziria o vermelho, converteria suposição em cobertura genuína, e
+tornaria cada futura versão deste mapa mais confiável.
+:::
+
+## Camada 2 -- o modelo é bom o suficiente?
+
+Uma projeção herda todas as fraquezas do modelo por trás dela. Se o modelo de ocupação de
+uma espécie mal distingue sítios usados de sítios não usados, projetá-lo apenas pinta ruído
+sobre um país. Toda espécie é triada com **AUC** -- a área sob a curva ROC, a probabilidade
+de o modelo classificar um sítio verdadeiramente ocupado acima de um sítio não ocupado. AUC
+= 0,5 é uma moeda ao acaso; 0,7 é um piso comum de "adequado"; 0,8+ é uma boa discriminação.
+
+```{r auc-screen-2}
+#| echo: true
+cat("Species at AUC >= 0.70:", sum(auc$auc_camera_comm >= 0.70), "of", nrow(auc), "\n")
+cat("Species below 0.70:", sum(auc$auc_camera_comm < 0.70), "\n")
+lo <- auc[order(auc$auc_camera_comm)[1:5], ]
+cat("Species below 0.70:", paste(lo$species, sprintf("(%.2f)", lo$auc_camera_comm), collapse=", "), "\n")
+```
+
+![Psi de ocupação do modelo comunitário em nível de câmera, as 39 espécies com AUC >= 0,70, ordenadas por AUC. Cada painel usa sua própria escala de cor não linear (lei de potência) para que áreas de baixa probabilidade mantenham contraste em vez de colapsar em uma única cor uniforme.](mod5_figs/gallery_community_hiAUC_full.png){#fig-gallery-hiauc}
+
+![Psi de ocupação do modelo comunitário em nível de câmera, as 5 espécies com AUC < 0,70. O modelo discrimina fracamente para essas espécies; leia esses padrões como sugestivos, não confiáveis.](mod5_figs/gallery_community_loAUC_full.png){#fig-gallery-loauc}
+
+## Resumo em nível de comunidade: riqueza e ocupação total prevista
+
+Agora que os mapas por espécie acima mostram o que o modelo prevê para cada uma das 44
+espécies individualmente, duas visões agregadas resumem toda a assembleia de uma só vez.
+
+**Riqueza** é a soma do psi previsto de cada espécie em uma célula: o número esperado de
+espécies presentes, restrito à máscara de distribuição (IUCN) de cada espécie.
+
+![Riqueza comunitária prevista em todo o Brasil (44 espécies, restrita à máscara de distribuição de cada espécie).](mod5_figs/richness_and_presence_community_camera.png){#fig-richness-presence}
+
+```{r richness-summary}
+#| echo: true
+cat("Richness (sum of psi) -- mean:",
+    round(mean(psi_comm$richness_camera_comm), 2), ", range:",
+    round(min(psi_comm$richness_camera_comm), 3), "-",
+    round(max(psi_comm$richness_camera_comm), 2), "\n")
+```
+
+A riqueza é mais alta na Amazônia noroeste, declinando em direção à Caatinga, mais seca, e
+ao sul e litoral, mais desenvolvidos, um gradiente consistente com os padrões conhecidos de
+diversidade de mamíferos no Brasil.
+
+**A ocupação total prevista** responde a uma pergunta relacionada, mas diferente: onde
+ocorreriam a maioria das detecções de animais? A riqueza conta *quantas espécies* são
+esperadas em uma célula; ela trata uma célula com dez espécies, cada uma com psi = 0,1, da
+mesma forma que uma célula com uma espécie com psi = 1,0 em termos de "espécies presentes",
+mas não em termos de quantos animais uma câmera ali provavelmente fotografaria. Somar
+diretamente a probabilidade de ocupação de cada espécie -- extrapolada para toda a grade,
+sem qualquer restrição de máscara de distribuição -- fornece uma proxy para o **total
+esperado de detecções**: uma célula onde poucas espécies têm alta probabilidade de presença
+e muitas têm probabilidade moderada contribui mais para essa soma do que uma célula com a
+mesma riqueza distribuída de forma rarefeita.
+
+```{r detection-density}
+#| echo: true
+cat("Summed occupancy (total expected detections proxy) -- mean:",
+    round(mean(psi_comm$richness_full_extrapolation), 2), ", range:",
+    round(min(psi_comm$richness_full_extrapolation), 3), "-",
+    round(max(psi_comm$richness_full_extrapolation), 2), "\n")
+```
+
+![Ocupação total prevista de animais em todo o Brasil -- a soma das probabilidades de ocupação das 44 espécies, extrapolada em âmbito nacional. Usa um esquema de cores diferente (inferno, não linear) do mapa de riqueza acima para evitar que os dois sejam confundidos à primeira vista -- a quantidade subjacente é o mesmo cálculo de soma dos psi, apenas o enquadramento (presença total esperada de animais, não contagem de espécies) difere, e essa visão não está restrita a nenhuma máscara de distribuição.](mod5_figs/detection_density_map.png){#fig-detection-density}
+
+# Da adequação a um mapa de distribuição
+
+Uma superfície de adequação diz "o habitat desta célula é adequado para a espécie". Ela não
+diz "a espécie vive aqui" -- o modelo de habitat de uma onça-pintada vai tranquilamente
+acender floresta adequada em uma região que onças-pintadas jamais ocuparam. Duas etapas a
+mais transformam uma superfície de adequação em um mapa de distribuição: recortar para a
+área de ocorrência conhecida, e escolher um corte que separe "presente" de "ausente".
+
+## Mascaramento por área de ocorrência
+
+O mascaramento por área de ocorrência é uma etapa simples: recortar a predição de cada
+espécie ao seu **polígono de distribuição da IUCN**, a distribuição desenhada por
+especialistas, de modo que a presença prevista fora da área de ocorrência conhecida seja
+removida. Isso reaproveita diretamente o exercício de mapa de distribuição do Módulo 2.2 --
+os mesmos polígonos, o mesmo crosswalk espécie-polígono, aplicado aqui como uma máscara
+espacial em vez de re-derivado.
+
+Cada uma das 44 espécies modeladas tem um polígono da IUCN (três precisaram de um crosswalk
+de sinônimo taxonômico -- *Dicotyles tajacu* -> *Pecari tajacu*, *Subulo gouazoubira* ->
+*Mazama gouazoubira*, *Passalites nemorivagus* -> *Mazama nemorivaga*). A única exceção é o
+**javali** (*Sus scrofa*), não nativo do Brasil e sem um polígono de distribuição nativa
+significativo por aqui; ele é projetado sem máscara de distribuição e sinalizado como um
+caso especial de espécie introduzida.
+
+A máscara é deliberadamente simples -- um recorte espacial -- porque o julgamento ecológico
+(quais detecções fora da área de ocorrência manter versus tratar como zeros estruturais) já
+foi feito no exercício do Módulo 2.2 / Portão 4. Aqui ela é apenas aplicada.
+
+## Escolhendo um limiar
+
+O produto final que muitas pessoas querem é um mapa de distribuição do tipo sim/não, o que
+significa transformar o psi contínuo em presença/ausência em algum corte. O corte é uma
+escolha genuína com consequências reais: baixo demais e o mapa se enche de falsa presença;
+alto demais e ele perde ocorrências reais. Não existe um corte que seja simultaneamente
+"correto" para todo propósito -- um planejador de conservação que quer evitar perder
+qualquer sítio ocupado e um modelador que quer um mapa de distribuição limpo e sem excesso
+de ruído razoavelmente escolheriam limiares diferentes.
+
+Este módulo usa o limiar de **maximização de sensibilidade mais especificidade** (o ponto de
+Youden na curva ROC): o valor de psi que melhor separa presença de ausência observadas nos
+dados de treinamento, no sentido de maximizar (sensibilidade + especificidade - 1) entre
+todos os cortes possíveis. É um padrão de referência bem fundamentado porque não exige
+escolher um número redondo arbitrário como 0,5, e pondera os dois tipos de erro -- perder
+uma ocorrência real, e afirmar falsamente uma -- igualmente, em vez de favorecer um deles
+silenciosamente.
+
+```{r thresholds}
+#| echo: true
+cat("Median Youden threshold across all 44 species:", round(median(auc$thr_camera_comm), 3), "\n")
+cat("Threshold range:", round(min(auc$thr_camera_comm), 3), "-", round(max(auc$thr_camera_comm), 3), "\n")
+```
+
+Os limiares variam amplamente entre espécies -- uma espécie comum e amplamente distribuída,
+com um psi médio naturalmente alto, tem um corte ótimo muito mais alto do que uma espécie
+rara e detectada de forma esparsa. Não existe um único número que funcione para todas as
+espécies, e é por isso que o limiar é calculado separadamente para cada uma.
+
+**A regra -- presente ou ausente, dois resultados.** Cada célula da grade recebe exatamente
+um dos dois rótulos para cada espécie:
+
+$$
+\textbf{presente} = \hat\psi \ge \text{limiar, e dentro da área de ocorrência da IUCN da espécie}
+$$
+$$
+\textbf{ausente} = \text{tudo o mais -- abaixo do limiar, ou fora da área de ocorrência da espécie}
+$$
+
+Células fora da área de ocorrência são incorporadas em **ausente** em vez de carregar um
+rótulo separado de "não avaliado": os diagnósticos de cobertura de covariáveis do modelo (a
+verificação MESS acima) já sinalizam quais *regiões da grade* são propensas à extrapolação,
+de modo que os mapas de distribuição abaixo permanecem um retrato limpo de
+presença/ausência, em vez de uma classificação de três categorias com uma grande categoria
+cinzenta.
+
+```{r status-summary}
+#| echo: true
+status_cam <- read_d("grid_status_community_camera_11cov.csv")
+species_cols <- setdiff(names(status_cam), "sid")
+pct_present <- mean(sapply(status_cam[, ..species_cols], function(x) mean(x==1)))
+cat("Average share of grid cells labeled 'present', across all 44 species:",
+    sprintf("%.1f%%\n", 100*pct_present))
+```
+
+## De um mapa de distribuição a uma estimativa de área ocupada
+
+Uma vez que cada célula carrega um rótulo de presença/ausência, uma pergunta natural seguinte
+é: quanta área cada espécie de fato ocupa? Simplesmente contar células da grade
+subestimaria em direção aos polos e superestimaria perto do equador, porque uma célula de
+0,2 graus não tem uma área física fixa -- as linhas de longitude convergem em direção aos
+polos, então uma célula cobre menos área de solo quanto mais distante estiver do equador. A
+área de cada célula é calculada a partir da sua latitude central usando a fórmula esférica
+padrão para uma célula de reticulado:
+
+$$
+A(\text{lat}) = R^2 \, \Delta\lambda \, \bigl(\sin(\text{lat}_2) - \sin(\text{lat}_1)\bigr)
+$$
+
+onde $R$ é o raio da Terra, $\Delta\lambda$ é a largura longitudinal da célula em radianos, e
+$\text{lat}_1$, $\text{lat}_2$ são as bordas sul e norte da célula. Somando essa área sobre
+cada célula rotulada como **presente** obtém-se a área ocupada estimada de cada espécie no
+Brasil.
+
+```{r occupied-area}
+#| echo: true
+area_tbl <- read_d("species_occupied_area_camera_comm.csv")
+cat("Total grid area (sanity check against Brazil's known area, ~8.51M km^2):",
+    round(sum(psi_comm$cell_area_km2)/1e6, 2), "million km^2\n")
+top5 <- area_tbl[order(-area_tbl$occupied_area_km2)][1:5]
+cat("Largest occupied areas:\n")
+for (i in 1:5) cat(" ", top5$species[i], "--", round(top5$occupied_area_km2[i]/1e6, 2), "million km^2\n")
+jag_row <- area_tbl[area_tbl$species == "Panthera onca"]
+cat("Jaguar occupied area:", round(jag_row$occupied_area_km2/1e6, 3), "million km^2 (",
+    sprintf("%.0f%%", 100*jag_row$pct_inrange_occupied), "of its IUCN range area)\n")
+```
+
+![Área estimada ocupada no Brasil, top 15 espécies, área da célula ponderada pela latitude.](mod5_figs/species_occupied_area_top15.png){#fig-occupied-area}
+
+A estimativa de área ocupada herda a escolha de limiar feita acima -- ela depende do corte
+específico de cada espécie escolhido ali. Ela **não** é uma estimativa populacional --
+ocupação responde "onde", não "quantos" -- transformar uma cifra de área ocupada em um
+número de indivíduos exige uma estimativa de densidade independente, que este conjunto de
+dados (detecções não marcadas, sem animais identificados individualmente) não consegue
+fornecer sozinho.
+
+## Mapas de distribuição para as espécies bem suportadas
+
+Aplicando a regra de presença/ausência no mapa, para cada espécie cujo modelo ultrapassa o
+critério de AUC >= 0,70, as superfícies individuais de psi acima se transformam em mapas de
+distribuição propriamente ditos.
+
+![Mapas de distribuição (presente / ausente) para as 39 espécies com AUC >= 0,70, ordenadas por AUC. Dourado = presente (psi acima do limiar de Youden próprio da espécie e dentro de sua área de ocorrência da IUCN); azul = ausente, o que inclui tanto células avaliadas abaixo do limiar quanto células fora da área de ocorrência da espécie.](mod5_figs/rangemap_community_hiAUC_full.png){#fig-rangemap-hiauc}
+
+A área presente (dourada) difere de espécie para espécie conforme o polígono de área de
+ocorrência da IUCN e o limiar próprios de cada espécie -- de modo que um generalista de
+habitat de ampla distribuição (por exemplo, cachorro-do-mato, onça-parda) cobre uma parcela
+do mapa muito maior do que um endemismo de distribuição restrita (por exemplo, o mocó,
+confinado à Caatinga). Uma célula rotulada "ausente" reúne dois motivos diferentes (fora da
+área de ocorrência da espécie, ou dentro da área de ocorrência mas abaixo de seu limiar de
+detecção) em vez de distingui-los -- uma simplificação escolhida deliberadamente aqui para
+manter o mapa uma imagem limpa de duas cores, em vez de introduzir uma terceira categoria,
+mais difícil de interpretar.
+
+# Aprofundamento: o que o pooling parcial faz pela onça-pintada
+
+A onça-pintada é um exemplo prático útil porque se situa exatamente no ponto em que o
+principal benefício do modelo de comunidade -- pegar emprestada força estatística entre
+espécies -- mais importa: uma espécie de ampla distribuição, mas comparativamente detectada
+com pouca frequência em relação aos mamíferos menores e mais abundantes do Snapshot Brasil.
+
+```{r jaguar-numbers}
+#| echo: true
+jag_auc <- auc[auc$species == "Panthera onca", ]
+cat("Jaguar community-model AUC:", round(jag_auc$auc_camera_comm, 3), "\n")
+cat("Jaguar Youden threshold:", round(jag_auc$thr_camera_comm, 3), "\n")
+jag_hyp <- read_d("community_lpsi_camera_11cov_v5.csv")
+jag_row <- jag_hyp[jag_hyp$species == "Panthera onca", ]
+cat("Jaguar species intercept (lpsi, logit scale):", round(jag_row$lpsi, 2),
+    "+/-", round(jag_row$lpsi_sd, 2), "\n")
+```
+
+![Probabilidade de ocupação da onça-pintada no Brasil: um ajuste independente de espécie única (esquerda) versus o modelo de comunidade usado neste módulo (direita), ambos no nível de câmera com as mesmas covariáveis centrais. Escala de cores não linear (lei de potência), escala própria por painel.](mod5_figs/jaguar_deep_dive.png){#fig-jaguar-deepdive}
+
+Os dois mapas concordam quanto ao padrão geral -- ocupação da onça-pintada concentrada no
+noroeste da Amazônia e manchas remanescentes esparsas mais ao sul e a leste -- mas a
+superfície do modelo de comunidade é visivelmente mais conservadora (psi médio mais baixo,
+concentração espacial mais estreita) do que o ajuste independente. Essa diferença é
+exatamente o que o pooling parcial deveria fazer: com relativamente poucas detecções de
+onça-pintada disponíveis, os coeficientes de habitat de um modelo independente são
+estimados quase inteiramente a partir dos dados escassos da própria onça-pintada e podem
+oscilar para valores extremos em qualquer direção; o modelo de comunidade, em vez disso,
+puxa os coeficientes da onça-pintada em direção ao padrão da assembleia como um todo,
+trocando parte do detalhe específico da espécie por uma estimativa mais estável e menos
+dominada por ruído.
+
+## Os coeficientes por trás da diferença
+
+Os dois mapas acima são construídos, cada um, a partir de um conjunto de números -- o
+intercepto específico da onça-pintada e os coeficientes de habitat inseridos na fórmula da
+calculadora de raster apresentada anteriormente neste módulo. Aqui eles aparecem lado a
+lado, exatamente como usados, sem nenhuma medida de incerteza associada (veja a tabela
+completa de coeficientes do modelo de comunidade, `community_species_betas_camera_11cov_v5.csv`,
+para os intervalos credíveis por trás da coluna do modelo de comunidade).
+
+```{r jaguar-coefs}
+#| echo: true
+jc <- read_d("jaguar_deepdive_coefficients_simple.csv")
+knitr::kable(jc, digits = 3,
+  caption = "Jaguar coefficients used to build each map. 'Community' = this module's community model (11 covariates). 'Independent' = the single-species fit from Module 3, which predates three covariates (ghsl_built_5000m, dist_road_m, dist_water_m) being added to the covariate set -- its map is built from 9 covariates plus intercept, not 11.")
+```
+
+Dois padrões são visíveis diretamente nesses números:
+
+1. **Pastagem e lavoura são os que mais se movem.** Os coeficientes de pastagem ($-1,00$) e
+   lavoura ($-0,63$) do modelo independente -- estimados quase inteiramente a partir das
+   detecções esparsas da própria onça-pintada nessas classes de cobertura do solo --
+   encolhem em direção a zero no modelo de comunidade ($-0,09$ e $+0,05$). Essas são
+   exatamente as covariáveis em que a onça-pintada tem menos dados diretos (a onça-pintada é
+   raramente detectada em pastagem ou lavoura), de modo que o padrão de toda a comunidade
+   domina o coeficiente do modelo de comunidade.
+2. **Temperatura se move na direção oposta.** O coeficiente de temperatura da onça-pintada é
+   maior no modelo de comunidade ($3,97$) do que no modelo independente ($1,89$) -- o
+   pooling parcial não encolhe uniformemente cada coeficiente em direção a zero; ele move
+   cada um em direção à estimativa da comunidade para aquela relação, o que, no caso da
+   temperatura, reforça em vez de diluir o sinal próprio da onça-pintada.
+
+Isso representa uma troca real, não um upgrade gratuito. Onde as verdadeiras relações de
+habitat da onça-pintada de fato diferem do restante da comunidade -- algo plausível para um
+predador de topo de ampla distribuição, com exigências de área diferentes das espécies
+menores e mais comuns que dominam a média de toda a comunidade --, o pooling pode subestimar
+a real especificidade de habitat da onça-pintada. A forma correta de interpretar o mapa da
+onça-pintada neste módulo é como a escolha estatisticamente mais defensável diante dos dados
+efetivamente disponíveis, e não como uma afirmação de que ele resolveu todas as questões em
+aberto sobre o uso de habitat pela onça-pintada no Brasil.
+
+# Conclusões
+
+1. **A projeção é aritmética; a confiança é a parte difícil.** Transformar um modelo de
+   ocupação comunitário ajustado em um mapa nacional é um cálculo de raster, repetido uma
+   vez por espécie e somado para obter a riqueza. O trabalho deste módulo é o filtro de
+   duas camadas em torno disso -- o modelo é bom o suficiente (AUC) e cobrimos o espaço de
+   covariáveis (MESS) -- mais a máscara de distribuição e o limiar.
+2. **Sinalize, não esconda, previsões fracas.** Todo mapa é entregue com seu AUC, e toda
+   célula carrega um rótulo de presença/ausência construído a partir do limiar e da máscara
+   de distribuição daquela espécie.
+3. **O pooling parcial muda os mapas de espécies individuais, não apenas seus erros
+   padrão.** A investigação aprofundada da onça-pintada mostra que um ajuste comunitário
+   pode remodelar de forma significativa a superfície prevista de uma espécie com poucos
+   dados em relação a um ajuste independente de espécie única -- uma verdadeira relação de
+   troca entre força emprestada e detalhe específico da espécie, não uma melhoria
+   estritamente gratuita.
+4. **Área ocupada não é tamanho populacional.** Transformar um mapa de distribuição em uma
+   cifra de km² por espécie é um cálculo de área direto uma vez que os rótulos de
+   presença/ausência existam, mas isso responde "onde", não "quantos" -- uma estimativa
+   populacional genuína precisa de uma relação de densidade independente que este conjunto
+   de dados não consegue fornecer sozinho.
+5. **As lacunas de cobertura são, em si, úteis.** Aproximadamente um terço do país fica
+   fora do envelope de covariáveis amostrado quando a acessibilidade (distância a estradas
+   e corpos d'água, desenvolvimento) é incluída junto com habitat e clima -- um mapa de
+   onde futuras instalações de armadilhas fotográficas trariam o maior benefício.
+
+## O que fica para módulos posteriores
+
+As **interações** entre espécies -- como a presença ou abundância de uma espécie se
+relaciona com a de outra -- são abordadas no Módulo 6. Os padrões **temporais** -- horário
+de atividade, mudanças sazonais e sobreposição de horários entre predador e presa -- são
+abordados no Módulo 7.

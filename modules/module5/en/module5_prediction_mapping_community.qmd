@@ -1,0 +1,527 @@
+---
+title: "Module 5 -- Prediction & Mapping"
+subtitle: "Snapshot Brasil camera-trap analysis pipeline"
+lang: en
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    code-fold: false
+    code-tools: true
+    theme: cosmo
+    fig-width: 9
+    fig-height: 6
+    embed-resources: true
+    mainfont: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
+execute:
+  warning: false
+  message: false
+knitr:
+  opts_chunk:
+    comment: "#>"
+params:
+  run_live: false
+---
+
+```{r setup}
+#| include: false
+RUN_LIVE <- isTRUE(params$run_live)
+library(data.table)
+DATA <- "mod5_data"
+FIGS <- "mod5_figs"
+read_d <- function(f) fread(file.path(DATA, f))
+```
+
+::: {.callout-important}
+## How to use this notebook
+The national prediction grid (17,603 cells) was built by extracting habitat covariates from
+Google Earth Engine for every cell, then pushing each cell through the fitted occupancy
+model -- too heavy and too dependent on a GEE service account to run in class. Those steps
+are **shown as code, not executed**. This notebook **loads the delivered prediction grid**
+and computes the parts that make the method transparent live: the model-adequacy screen
+(AUC), the extrapolation diagnostics (MESS + covariate coverage), the range mask, the
+composite presence/absence rule, and the per-species occupied-area estimate -- so you see
+exactly how a fitted model becomes a national map, and where it should *not* be trusted.
+:::
+
+# What this module does
+
+Module 4 estimated a **community occupancy model**: a single joint fit, across all 44
+mammal species simultaneously, linking eleven habitat and detection covariates to each
+species' probability of occupancy ($\psi$) and detection ($p$). Every species' coefficients
+are partially pooled toward a community-wide mean, so a rare species with few detections
+still gets an informed estimate rather than a wild one. This module takes that fitted model
+and turns it into a **map of predicted occupancy across all of Brazil**, at every point on a
+regular grid, whether or not a camera was ever there.
+
+That step is arithmetic, but trusting the result is not automatic. A model fit on forested,
+protected, easily-accessed camera sites has no guarantee of applying to a remote,
+deforested, roadless corner of the country it never saw. This module builds the national
+maps and, in equal measure, builds the diagnostics that say where those maps can and cannot
+be trusted.
+
+## Why the community model, at the camera level
+
+Two design choices are worth stating up front, because they shape everything that follows.
+
+**Community over single-species.** A joint community model borrows statistical strength
+across species: a rare species' habitat response is partially informed by the
+community-wide pattern rather than estimated from its own thin data alone. In this dataset
+the payoff is concrete -- species with too few detections to support a stable independent
+fit (jaguar among them) get materially better-behaved coefficients under partial pooling, at
+the cost of shrinking every species' estimate somewhat toward the community mean. The
+worked example toward the end of this module works through exactly what that trade-off
+looks like for jaguar.
+
+**Camera level, not array level.** The model used here is fit at the individual camera
+point (~1,100 sites), not aggregated to the coarser ~20 km survey array. The camera-level
+fit has far more statistical power (roughly 18x more spatial replicates) and a smaller
+share of the national grid falls outside its training envelope.
+
+```{r auc-screen}
+#| echo: true
+auc <- read_d("all_species_auc_community_camera.csv")
+cat("Species modelled:", nrow(auc), "\n")
+cat("Median AUC:", round(median(auc$auc_camera_comm, na.rm=TRUE), 3), "\n")
+cat("Species at AUC >= 0.70:", sum(auc$auc_camera_comm >= 0.70, na.rm=TRUE),
+    "| below 0.70:", sum(auc$auc_camera_comm < 0.70, na.rm=TRUE), "\n")
+```
+
+# Building the prediction grid
+
+The prediction surface is a regular grid of points at **0.2 degree spacing (~20 km)**
+covering Brazil's bounding box, clipped to the landmass -- **17,603 cells**. Each cell is a
+location where the fitted model is evaluated, so each needs the *same eleven covariates*
+the community model was fit on, measured *exactly the same way* as at the camera sites.
+
+That last point is the one that makes or breaks a projection: a covariate measured
+differently on the grid than at the cameras is a different variable, and the model's
+coefficients no longer apply. Every grid covariate is therefore extracted from the identical
+Earth Engine source, with the identical definition, as its camera-site counterpart:
+
+| Covariate | Source | Definition |
+|---|---|---|
+| forest, savanna, pasture, cropland % | MapBiomas Collection 10 (2024), 30 m | % of a 100 m buffer in the mapped classes |
+| native vegetation % | MapBiomas Collection 10 (2024), 30 m | % of a 1 km buffer in native classes |
+| mean annual temperature | WorldClim v1 BIO1 | point value (degrees C) |
+| annual precipitation | WorldClim v1 BIO12 | point value (mm) |
+| protected-area status | WDPA (Brazil, designated PAs) | point in a PA polygon (0/1) |
+| built-up surface | JRC GHSL built-surface, 2020 | mean built-surface fraction in a 5 km buffer |
+| distance to the nearest mapped road | GRIP4 global roads database | Euclidean distance-transform (m) |
+| distance to the nearest water/flooded surface | MapBiomas water and flooded-forest classes | Euclidean distance-transform (m) |
+
+The last three rows -- development, road distance, water distance -- are extracted the same
+way at every one of the 17,603 grid cells as they were at the camera sites: a
+distance-transform raster is built once over the relevant feature layer (roads, or the set
+of water/flooded MapBiomas classes), then read off at each point. Where the transform's
+search neighborhood found no target feature at all, the distance is capped at the deepest
+value that *was* measured rather than left as an artificial maximum, and the cell is flagged
+with a sentinel indicator so a capped value is never silently mistaken for a precisely
+measured one.
+
+Each grid covariate was verified to reproduce the camera-site values exactly where the two
+overlap, so the grid and the training data are on one scale. Covariates are then standardized
+with the **same means and standard deviations** used when the model was fit -- not the
+grid's own -- because the coefficients are on that training scale.
+
+```{r grid-load}
+#| echo: true
+grid <- read_d("national_grid_covariates_11cov.csv")
+cat("Grid cells:", nrow(grid), "at 0.2 degrees (~20 km)\n")
+cat("Cells with complete camera-level (11) covariates:", sum(complete.cases(
+      grid[, .(forest_100m, savanna_100m, pasture_100m, cropland_100m,
+               native_veg_1000m, temp_mean_C, precip_annual_mm, in_pa,
+               ghsl_built_5000m, dist_road_m, dist_water_m)])), "\n")
+```
+
+## The prediction equation as a raster calculator
+
+With covariate layers in hand, prediction is arithmetic. For species $s$ with fitted
+community-model coefficients $\hat\beta_s$ and species intercept $\hat\alpha_s$, every grid
+cell $i$ gets
+
+$$\hat\psi_{is} = \text{logit}^{-1}\!\left(\hat\alpha_s + \sum_k \hat\beta_{sk}\, z_{ik}\right),
+\qquad \text{logit}^{-1}(u)=\frac{1}{1+e^{-u}}$$
+
+where $z_{ik}$ is the standardized value of covariate $k$ in cell $i$, common across all
+species because it is a property of the location, not the species. Read the right-hand side
+as a sequence of raster operations, the way a GIS "raster calculator" would build it one
+layer at a time:
+
+1. Take the standardized forest-cover raster; multiply every pixel by $\hat\beta_{s,\text{forest}}$.
+2. Do the same for every other covariate raster and its own species-specific coefficient.
+3. Add all the resulting rasters together, pixel by pixel, plus the species intercept -- this
+   is the **linear predictor**, a raster on the logit scale, unbounded and hard to interpret
+   directly.
+4. Apply the inverse-logit function to every pixel of that raster. The output is
+   $\hat\psi_s$, bounded between 0 and 1 by construction, and interpretable as a probability
+   of occupancy for species $s$.
+
+Repeating this for every one of the 44 species and summing the resulting $\hat\psi$ rasters
+gives a **community richness surface** -- the expected number of species present at each
+grid cell.
+
+```{r prediction-example}
+#| echo: true
+psi_comm <- read_d("grid_psi_community_camera_11cov.csv")
+sp_cols <- setdiff(names(psi_comm), c("sid","lon","lat","richness_camera_comm",
+                                        "mess_camera_comm","extrapolating_camera_comm",
+                                        "cell_area_km2","n_present_thresholded"))
+cat("Community psi predictions:", nrow(psi_comm), "grid cells x", length(sp_cols), "species\n")
+cat("Richness range:", round(min(psi_comm$richness_camera_comm), 3), "to",
+    round(max(psi_comm$richness_camera_comm), 2), "expected species per cell\n")
+```
+
+# Should we make these predictions?
+
+Before mapping anything, two questions decide whether a prediction is worth trusting. This
+module treats them as an explicit two-layer gate, applied to every species before its map is
+shown.
+
+## Layer 1 -- do we cover the covariate space? (MESS)
+
+Even a good model is only trustworthy where the grid's environment resembles the environment
+the cameras sampled. Predicting into a novel climate, land-cover, or accessibility
+combination is **extrapolation** -- the model is guessing outside its training range, and
+the inverse-logit will still dutifully return a confident-looking number regardless.
+
+**MESS** (Multivariate Environmental Similarity Surface; Elith et al. 2010) measures this at
+a basic, intuitive level. For each covariate, MESS asks: does this grid cell's value sit
+inside the range the cameras spanned for that covariate, or outside it -- and if outside, by
+how much? Concretely, for covariate $k$ with training range $[\min_k, \max_k]$ and a cell's
+percentile position $f$ within that range, the similarity score is
+
+$$
+\text{sim}_k =
+\begin{cases}
+f & f < 0 \text{ (below the training minimum)}\\
+2f & 0 \le f \le 50\\
+2(100-f) & 50 < f < 100\\
+100-f & f \ge 100 \text{ (above the training maximum)}
+\end{cases}
+$$
+
+A cell's overall MESS score is the **most negative** of its per-covariate similarities --
+one badly out-of-range covariate is enough to flag a cell as extrapolating, even if every
+other covariate matches the training data perfectly. Positive MESS means every covariate at
+that cell falls within the sampled envelope; **negative MESS means at least one covariate is
+outside it**, i.e. the model is extrapolating there.
+
+```{r mess-summary}
+#| echo: true
+cat("Grid cells extrapolating on the 11-covariate space (MESS < 0):",
+    sum(grid$extrapolating, na.rm=TRUE),
+    sprintf("(%.1f%% of the grid)\n", 100*mean(grid$extrapolating, na.rm=TRUE)))
+```
+
+![Extrapolation diagnostics on the full 11-covariate space. Top-left: the MESS surface -- blue cells sit inside the sampled covariate envelope, red cells extrapolate. Top-middle: the same as a red/blue mask. Remaining panels: covariate-space biplots and histograms, grey = all grid cells, red = camera sites.](mod5_figs/mess_extrapolation_11cov.png){#fig-mess}
+
+Roughly a third of the grid extrapolates on at least one of the eleven covariates. The
+biplots make the sampling gaps concrete at a basic level: the temperature x precipitation
+panel shows camera sites clustered away from the hot-wet Amazon extreme; the development x
+pasture panel and the road/water distance panel show the cameras concentrated at more
+accessible, closer-to-infrastructure locations than Brazil as a whole; and the forest
+histogram shows sites skew far more forested than the national average. Development, road
+access, and water proximity turn out to be the covariates that push the most additional
+cells into extrapolation -- remote, roadless interior regions are exactly where camera
+deployment is hardest, so they are also where the model has the least basis for a confident
+prediction.
+
+::: {.callout-tip}
+## Read the red as a sampling to-do list
+The extrapolation surface is not just a caveat -- it is a **map of where Snapshot Brasil
+most needs cameras in future years**. A cell is red precisely because no current camera
+samples its combination of climate, land cover, and accessibility, so the model is guessing
+there. Adding deployments in those regions in coming seasons would shrink the red, convert
+guesswork into genuine coverage, and make every future version of this map more
+trustworthy.
+:::
+
+## Layer 2 -- is the model good enough?
+
+A projection inherits all the weaknesses of the model behind it. If a species' occupancy
+model barely distinguishes used from unused sites, projecting it just paints noise across a
+country. Every species is screened with **AUC** -- the area under the ROC curve, the
+probability the model ranks a truly-occupied site above an unoccupied one. AUC = 0.5 is a
+coin flip; 0.7 is a common "adequate" floor; 0.8+ is good discrimination.
+
+```{r auc-screen-2}
+#| echo: true
+cat("Species at AUC >= 0.70:", sum(auc$auc_camera_comm >= 0.70), "of", nrow(auc), "\n")
+cat("Species below 0.70:", sum(auc$auc_camera_comm < 0.70), "\n")
+lo <- auc[order(auc$auc_camera_comm)[1:5], ]
+cat("Species below 0.70:", paste(lo$species, sprintf("(%.2f)", lo$auc_camera_comm), collapse=", "), "\n")
+```
+
+![Camera-level community model occupancy psi, the 39 species with AUC >= 0.70, sorted by AUC. Each panel uses its own non-linear (power-law) colour scale so that low-probability areas keep contrast rather than collapsing into a single flat colour.](mod5_figs/gallery_community_hiAUC_full.png){#fig-gallery-hiauc}
+
+![Camera-level community model occupancy psi, the 5 species with AUC < 0.70. The model discriminates weakly for these; read these patterns as suggestive, not reliable.](mod5_figs/gallery_community_loAUC_full.png){#fig-gallery-loauc}
+
+## Community-level summary: richness and total predicted occupancy
+
+Now that the per-species maps above show what the model predicts for each of the 44 species
+individually, two aggregate views summarize the whole assemblage at once.
+
+**Richness** is the sum of every species' predicted psi in a cell: the expected number of
+species present, gated to each species' own IUCN range mask.
+
+![Predicted community richness across Brazil (44 species, gated to each species' own range mask).](mod5_figs/richness_and_presence_community_camera.png){#fig-richness-presence}
+
+```{r richness-summary}
+#| echo: true
+cat("Richness (sum of psi) -- mean:",
+    round(mean(psi_comm$richness_camera_comm), 2), ", range:",
+    round(min(psi_comm$richness_camera_comm), 3), "-",
+    round(max(psi_comm$richness_camera_comm), 2), "\n")
+```
+
+Richness is highest in the northwestern Amazon, declining toward the drier Caatinga and the
+more developed south and coast, a gradient consistent with known patterns of mammal
+diversity in Brazil.
+
+**Total predicted occupancy** answers a related but different question: where would most
+animal detections occur? Richness counts *how many species* are expected at a cell; it
+treats a cell with ten species each at psi = 0.1 the same as a cell with one species at
+psi = 1.0 in terms of "species present", but not in terms of how many animals a camera
+there would likely photograph. Summing every species' occupancy probability directly --
+extrapolated everywhere on the grid, with no range-mask gating -- gives a proxy for **total
+expected detections**: a cell where a few species are highly likely to be present and many
+are moderately likely contributes more to this sum than a cell with the same richness spread
+thinly.
+
+```{r detection-density}
+#| echo: true
+cat("Summed occupancy (total expected detections proxy) -- mean:",
+    round(mean(psi_comm$richness_full_extrapolation), 2), ", range:",
+    round(min(psi_comm$richness_full_extrapolation), 3), "-",
+    round(max(psi_comm$richness_full_extrapolation), 2), "\n")
+```
+
+![Predicted total animal occupancy across Brazil -- the sum of all 44 species' occupancy probabilities, extrapolated nationwide. Uses a different colour scheme (inferno, non-linear) from the richness map above to avoid the two being confused at a glance -- the underlying quantity is the same sum-of-psi calculation, only the framing (total expected animal presence, not species count) differs, and this view is not gated to any range mask.](mod5_figs/detection_density_map.png){#fig-detection-density}
+
+# From suitability to a range map
+
+A suitability surface says "this cell's habitat suits the species". It does not say "the
+species lives here" -- a jaguar's habitat model will happily light up suitable forest in a
+region jaguars have never occupied. Two more steps turn a suitability surface into a range
+map: clipping to the known range, and choosing a cutoff that separates "present" from
+"absent".
+
+## Range masking
+
+Range masking is a simple step: clip each species' prediction to its **IUCN range polygon**,
+the expert-drawn distribution, so predicted presence outside the known range is removed.
+This reuses the range-map exercise from Module 2.2 directly -- the same polygons, the same
+species-to-polygon crosswalk, applied here as a spatial mask rather than re-derived.
+
+Every one of the 44 modelled species has an IUCN polygon (three needed a taxonomic-synonym
+crosswalk -- *Dicotyles tajacu* -> *Pecari tajacu*, *Subulo gouazoubira* -> *Mazama
+gouazoubira*, *Passalites nemorivagus* -> *Mazama nemorivaga*). The one exception is the
+**Wild Boar** (*Sus scrofa*), non-native to Brazil with no meaningful native-range polygon
+here; it is projected without a range mask and flagged as an introduced-species special
+case.
+
+The mask is deliberately simple -- a spatial clip -- because the ecological judgment (which
+out-of-range detections to keep vs. treat as structural zeros) was already made in the
+Module 2.2 / Gate 4 exercise. Here it is only applied.
+
+## Choosing a threshold
+
+The final product many people want is a yes/no range map, which means turning the continuous
+psi into presence/absence at some cutoff. The cutoff is a genuine choice with real
+consequences: too low and the map floods with false presence; too high and it misses real
+occurrences. There is no cutoff that is simultaneously "correct" for every purpose -- a
+conservation planner wanting to avoid missing any occupied site and a modeler wanting a
+clean, uncluttered range map would reasonably choose different thresholds.
+
+This module uses the **maximize-sensitivity-plus-specificity** threshold (the Youden point
+on the ROC curve): the psi value that best separates observed presence from absence in the
+training data, in the sense of maximizing (sensitivity + specificity - 1) across every
+possible cutoff. It is a principled default because it does not require picking an
+arbitrary round number like 0.5, and it weighs the two error types -- missing a real
+occurrence, and falsely claiming one -- equally rather than favoring one silently.
+
+```{r thresholds}
+#| echo: true
+cat("Median Youden threshold across all 44 species:", round(median(auc$thr_camera_comm), 3), "\n")
+cat("Threshold range:", round(min(auc$thr_camera_comm), 3), "-", round(max(auc$thr_camera_comm), 3), "\n")
+```
+
+Thresholds vary widely across species -- a common, widespread species with a naturally high
+average psi has a much higher optimal cutoff than a rare, patchily-detected one. There is no
+single number that works for every species, which is why the threshold is computed
+separately for each.
+
+**The rule -- present or absent, two outcomes.** Every grid cell gets exactly one of two
+labels for each species:
+
+$$
+\textbf{present} = \hat\psi \ge \text{threshold, and in the species' IUCN range}
+$$
+$$
+\textbf{absent} = \text{everything else -- below threshold, or outside the species' range}
+$$
+
+Out-of-range cells are folded into **absent** rather than carrying a separate "not assessed"
+label: the model's covariate-coverage diagnostics (the MESS check above) already flag which
+*regions of the grid* are extrapolation-prone, so the range maps below stay a clean
+present/absent picture rather than a three-way classification with a large grey category.
+
+```{r status-summary}
+#| echo: true
+status_cam <- read_d("grid_status_community_camera_11cov.csv")
+species_cols <- setdiff(names(status_cam), "sid")
+pct_present <- mean(sapply(status_cam[, ..species_cols], function(x) mean(x==1)))
+cat("Average share of grid cells labeled 'present', across all 44 species:",
+    sprintf("%.1f%%\n", 100*pct_present))
+```
+
+## From a range map to an occupied-area estimate
+
+Once every cell carries a present/absent label, a natural next question is: how much area
+does each species actually occupy? Simply counting grid cells would undercount toward the
+poles and overcount near the equator, because a 0.2-degree cell is not a fixed physical area
+-- longitude lines converge toward the poles, so a cell spans less ground area the further
+it sits from the equator. Each cell's area is computed from its center latitude using the
+standard spherical formula for a graticule cell:
+
+$$
+A(\text{lat}) = R^2 \, \Delta\lambda \, \bigl(\sin(\text{lat}_2) - \sin(\text{lat}_1)\bigr)
+$$
+
+where $R$ is Earth's radius, $\Delta\lambda$ is the cell's longitudinal width in radians, and
+$\text{lat}_1$, $\text{lat}_2$ are the cell's south and north edges. Summing this area over
+every cell labeled **present** gives each species' estimated occupied area in Brazil.
+
+```{r occupied-area}
+#| echo: true
+area_tbl <- read_d("species_occupied_area_camera_comm.csv")
+cat("Total grid area (sanity check against Brazil's known area, ~8.51M km^2):",
+    round(sum(psi_comm$cell_area_km2)/1e6, 2), "million km^2\n")
+top5 <- area_tbl[order(-area_tbl$occupied_area_km2)][1:5]
+cat("Largest occupied areas:\n")
+for (i in 1:5) cat(" ", top5$species[i], "--", round(top5$occupied_area_km2[i]/1e6, 2), "million km^2\n")
+jag_row <- area_tbl[area_tbl$species == "Panthera onca"]
+cat("Jaguar occupied area:", round(jag_row$occupied_area_km2/1e6, 3), "million km^2 (",
+    sprintf("%.0f%%", 100*jag_row$pct_inrange_occupied), "of its IUCN range area)\n")
+```
+
+![Estimated area occupied in Brazil, top 15 species, cell area weighted by latitude.](mod5_figs/species_occupied_area_top15.png){#fig-occupied-area}
+
+The occupied-area estimate inherits the threshold choice above -- it depends on the
+species-specific cutoff chosen there. It is **not** a population estimate -- occupancy
+answers "where", not "how many" -- turning an occupied-area figure into a number of
+individuals requires an independent density estimate, which this dataset (unmarked
+detections, no individually-identified animals) cannot supply on its own.
+
+## Range maps for the well-supported species
+
+Putting the present/absent rule on the map, for every species whose model clears the
+AUC >= 0.70 bar, turns the individual psi surfaces above into range maps proper.
+
+![Range maps (present / absent) for the 39 species with AUC >= 0.70, sorted by AUC. Gold = present (psi above the species' own Youden threshold and inside its IUCN range); blue = absent, which includes both assessed cells below threshold and cells outside the species' range.](mod5_figs/rangemap_community_hiAUC_full.png){#fig-rangemap-hiauc}
+
+The present (gold) area differs species to species with each species' own IUCN range
+polygon and threshold -- so a wide-ranging habitat generalist (e.g. Crab-eating Fox, Puma)
+covers far more of the map than a narrow-range endemic (e.g. Rock Cavy, confined to the
+Caatinga). A cell being labeled "absent" folds together two different reasons (outside the
+species' range, or inside the range but below its detection threshold) rather than
+distinguishing them -- a simplification chosen deliberately here to keep the map a clean
+two-colour picture rather than introducing a third, harder-to-interpret category.
+
+# Deep dive: what partial pooling does for jaguar
+
+Jaguar is a useful worked example because it sits at the point where the community model's
+main benefit -- borrowing statistical strength across species -- matters most: a large,
+wide-ranging, but comparatively rarely-detected species relative to Snapshot Brasil's
+smaller, more abundant mammals.
+
+```{r jaguar-numbers}
+#| echo: true
+jag_auc <- auc[auc$species == "Panthera onca", ]
+cat("Jaguar community-model AUC:", round(jag_auc$auc_camera_comm, 3), "\n")
+cat("Jaguar Youden threshold:", round(jag_auc$thr_camera_comm, 3), "\n")
+jag_hyp <- read_d("community_lpsi_camera_11cov_v5.csv")
+jag_row <- jag_hyp[jag_hyp$species == "Panthera onca", ]
+cat("Jaguar species intercept (lpsi, logit scale):", round(jag_row$lpsi, 2),
+    "+/-", round(jag_row$lpsi_sd, 2), "\n")
+```
+
+![Jaguar occupancy probability across Brazil: an independent single-species fit (left) versus the community model used in this module (right), both at the camera level with the same core covariates. Non-linear (power-law) colour scale, own scale per panel.](mod5_figs/jaguar_deep_dive.png){#fig-jaguar-deepdive}
+
+The two maps agree on the broad pattern -- jaguar occupancy concentrated in the
+northwestern Amazon and scattered remnant patches further south and east -- but the
+community model's surface is visibly more conservative (lower average psi, tighter spatial
+concentration) than the independent fit. That difference is exactly what partial pooling is
+supposed to do: with relatively few jaguar detections to work with, an independent model's
+habitat coefficients are estimated almost entirely from jaguar's own thin data and can swing
+to extreme values in either direction; the community model instead pulls jaguar's
+coefficients toward the assemblage-wide pattern, trading away some of jaguar-specific detail
+for a more stable, less noise-driven estimate.
+
+## The coefficients behind the difference
+
+The two maps above are each built from one set of numbers -- the jaguar-specific
+intercept and habitat coefficients plugged into the raster-calculator formula from earlier
+in this module. Here they are side by side, exactly as used, with no measure of uncertainty
+attached (see the community model's full coefficient table, `community_species_betas_camera_11cov_v5.csv`,
+for the credible intervals behind the community-model column).
+
+```{r jaguar-coefs}
+#| echo: true
+jc <- read_d("jaguar_deepdive_coefficients_simple.csv")
+knitr::kable(jc, digits = 3,
+  caption = "Jaguar coefficients used to build each map. 'Community' = this module's community model (11 covariates). 'Independent' = the single-species fit from Module 3, which predates three covariates (ghsl_built_5000m, dist_road_m, dist_water_m) being added to the covariate set -- its map is built from 9 covariates plus intercept, not 11.")
+```
+
+Two patterns are visible directly in these numbers:
+
+1. **Pasture and cropland move the most.** The independent model's pasture ($-1.00$) and
+   cropland ($-0.63$) coefficients -- estimated almost entirely from jaguar's own sparse
+   detections in those land covers -- shrink toward zero in the community model ($-0.09$
+   and $+0.05$). These are exactly the covariates where jaguar has the least direct data
+   (jaguar is rarely detected in pasture or cropland at all), so the community-wide pattern
+   dominates the community-model coefficient.
+2. **Temperature moves the other direction.** Jaguar's temperature coefficient is larger in
+   the community model ($3.97$) than the independent model ($1.89$) -- partial pooling does
+   not uniformly shrink every coefficient toward zero, it moves each one toward the
+   community's estimate of the relationship, which for temperature reinforces rather than
+   dilutes jaguar's own signal.
+
+This is a real trade-off, not a free upgrade. Where jaguar's true habitat relationships
+genuinely differ from the rest of the community -- plausible for a wide-ranging apex
+predator with different area requirements than the smaller, more common species that
+dominate the community-wide average -- pooling can understate jaguar's real habitat
+specificity. The right way to read the jaguar map in this module is as the more
+statistically defensible choice given the data actually available, not as a claim that it
+has resolved every open question about jaguar habitat use in Brazil.
+
+# Takeaways
+
+1. **Projection is arithmetic; trust is the hard part.** Turning a fitted community
+   occupancy model into a national map is a raster calculation, repeated once per species
+   and summed for richness. The work of this module is the two-layer gate around it -- is
+   the model good enough (AUC), and do we cover the covariate space (MESS) -- plus the
+   range mask and threshold.
+2. **Flag, don't hide, weak predictions.** Every map ships with its AUC, and every cell
+   carries a present/absent label built from that species' own threshold and range mask.
+3. **Partial pooling changes individual species' maps, not just their standard errors.**
+   The jaguar deep dive shows a community fit can meaningfully reshape a data-poor
+   species' predicted surface relative to an independent single-species fit -- a real
+   trade-off between borrowed strength and species-specific detail, not a strictly free
+   improvement.
+4. **Occupied area is not population size.** Turning a range map into a km^2 figure per
+   species is a straightforward area calculation once the present/absent labels exist, but
+   it answers "where", not "how many" -- a genuine population estimate needs an independent
+   density relationship this dataset cannot supply on its own.
+5. **The gaps in coverage are themselves useful.** Roughly a third of the country falls
+   outside the sampled covariate envelope once accessibility (road and water distance,
+   development) is included alongside habitat and climate -- a map of where future camera
+   deployments would do the most good.
+
+## What's deferred to later modules
+
+Species **interactions** -- how one species' presence or abundance relates to another's --
+are covered in Module 6. **Temporal** patterns -- activity timing, seasonal shifts, and
+predator-prey timing overlap -- are covered in Module 7.

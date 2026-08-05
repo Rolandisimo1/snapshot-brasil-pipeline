@@ -325,50 +325,53 @@
 
   <section class="module">
     <h2>Module 5 — Prediction &amp; Mapping <span class="status">ready</span></h2>
-    <p>Projects each species' fitted occupancy model onto a 17,766-cell national grid, at both
-       camera-level (11 covariates) and array-level (6 covariates) resolution. Covers whether a
-       cell should be predicted at all &mdash; MESS extrapolation diagnostics plus five covariate-pair
-       biplots showing where the sampled sites do and don't cover the national covariate space
-       &mdash; the raster-calculator logic behind turning fitted coefficients into a probability
-       surface, AUC/Youden-threshold screening per species at each resolution, and a worked example
-       (South American Coati) showing how camera-level and array-level predictions can diverge for
-       the same species on the same map.</p>
+    <p>Projects the fitted camera-level <strong>community</strong> occupancy model (44 species,
+       partial pooling across an assemblage-wide hyper-distribution, 11 covariates) onto a
+       17,766-cell national grid. Covers whether a cell should be predicted at all &mdash; MESS
+       extrapolation diagnostics plus covariate-pair biplots showing where the sampled sites do
+       and don't cover the national covariate space &mdash; the raster-calculator logic behind
+       turning fitted coefficients into a probability surface, AUC/Youden-threshold screening per
+       species, present/absent range maps for the well-supported species, a national richness and
+       total-predicted-occupancy view, per-species occupied-area estimates, and a jaguar deep dive
+       comparing the community model's coefficients against an independent single-species fit to
+       show exactly what partial pooling changes.</p>
     <div class="dl-grid">
       <div class="dl-col">
         <h4>English</h4>
-        <a class="dl-btn" href="modules/module5/en/module5_prediction_mapping.html">
-          <span><span class="fmt">HTML</span> rendered report</span><span class="size">10.0 MB &middot; view</span>
+        <a class="dl-btn" href="modules/module5/en/module5_prediction_mapping_community.html">
+          <span><span class="fmt">HTML</span> rendered report</span><span class="size">13 MB &middot; view</span>
         </a>
-        <a class="dl-btn" href="modules/module5/en/module5_prediction_mapping.R" download>
-          <span><span class="fmt">R</span> script</span><span class="size">15 KB &middot; download</span>
+        <a class="dl-btn" href="modules/module5/en/module5_prediction_mapping_community.qmd" download>
+          <span><span class="fmt">QMD</span> Quarto source</span><span class="size">30 KB &middot; download</span>
         </a>
         <a class="dl-btn" href="modules/module5/en/module5_data.zip" download>
-          <span><span class="fmt">ZIP</span> input data</span><span class="size">1.4 MB &middot; download</span>
+          <span><span class="fmt">ZIP</span> input data</span><span class="size">5.4 MB &middot; download</span>
         </a>
       </div>
       <div class="dl-col">
         <h4>Português</h4>
-        <a class="dl-btn" href="modules/module5/pt/module5_prediction_mapping_pt.html">
-          <span><span class="fmt">HTML</span> relatório renderizado</span><span class="size">10.0 MB &middot; ver</span>
+        <a class="dl-btn" href="modules/module5/pt/module5_prediction_mapping_community_pt.html">
+          <span><span class="fmt">HTML</span> relatório renderizado</span><span class="size">13 MB &middot; ver</span>
         </a>
-        <a class="dl-btn" href="modules/module5/pt/module5_prediction_mapping_pt.R" download>
-          <span><span class="fmt">R</span> script</span><span class="size">15 KB &middot; baixar</span>
+        <a class="dl-btn" href="modules/module5/pt/module5_prediction_mapping_community_pt.qmd" download>
+          <span><span class="fmt">QMD</span> fonte Quarto</span><span class="size">34 KB &middot; baixar</span>
         </a>
         <a class="dl-btn" href="modules/module5/pt/module5_data.zip" download>
-          <span><span class="fmt">ZIP</span> dados de entrada</span><span class="size">1.4 MB &middot; baixar</span>
+          <span><span class="fmt">ZIP</span> dados de entrada</span><span class="size">5.4 MB &middot; baixar</span>
         </a>
       </div>
     </div>
     <details style="margin-top:1rem;">
-      <summary style="cursor:pointer; font-weight:600;">Figures produced by this script (7)</summary>
+      <summary style="cursor:pointer; font-weight:600;">Figures produced by this notebook (8)</summary>
       <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(220px,1fr)); gap:0.75rem; margin-top:0.75rem;">
         <img src="modules/module5/en/figs/mess_extrapolation_11cov.png" alt="Should we predict here? Extrapolation diagnostics (MESS + covariate coverage, 11-covariate model)" loading="lazy" style="width:100%; border-radius:4px;">
-        <img src="modules/module5/en/figs/worked_example_coati.png" alt="Same species, same covariates, two model resolutions (South American Coati)" loading="lazy" style="width:100%; border-radius:4px;">
-        <img src="modules/module5/en/figs/gallery_camera_highAUC.png" alt="Camera-level occupancy predictions, high-quality models (AUC >= 0.70)" loading="lazy" style="width:100%; border-radius:4px;">
-        <img src="modules/module5/en/figs/gallery_camera_lowAUC.png" alt="Camera-level occupancy predictions, weaker models (AUC < 0.70)" loading="lazy" style="width:100%; border-radius:4px;">
-        <img src="modules/module5/en/figs/gallery_array_highAUC.png" alt="Array-level occupancy predictions, high-quality models (AUC >= 0.70)" loading="lazy" style="width:100%; border-radius:4px;">
-        <img src="modules/module5/en/figs/gallery_array_lowAUC.png" alt="Array-level occupancy predictions, weaker models (AUC < 0.70)" loading="lazy" style="width:100%; border-radius:4px;">
-        <img src="modules/module5/en/figs/camera_vs_array_auc_11cov.png" alt="Camera-level vs array-level AUC, per species" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module5/en/figs/richness_and_presence_community_camera.png" alt="Predicted community richness across Brazil" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module5/en/figs/detection_density_map.png" alt="Predicted total animal occupancy across Brazil" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module5/en/figs/gallery_community_hiAUC_full.png" alt="Community model occupancy predictions, well-supported species (AUC >= 0.70)" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module5/en/figs/gallery_community_loAUC_full.png" alt="Community model occupancy predictions, weaker models (AUC < 0.70)" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module5/en/figs/rangemap_community_hiAUC_full.png" alt="Present/absent range maps, well-supported species (AUC >= 0.70)" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module5/en/figs/species_occupied_area_top15.png" alt="Estimated area occupied in Brazil, top 15 species" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module5/en/figs/jaguar_deep_dive.png" alt="Jaguar occupancy: independent model vs. community model with partial pooling" loading="lazy" style="width:100%; border-radius:4px;">
       </div>
     </details>
   </section>
@@ -700,51 +703,54 @@
 
   <section class="module">
     <h2>Módulo 5 — Predição e Mapeamento <span class="status">pronto</span></h2>
-    <p>Projeta o modelo de ocupação ajustado de cada espécie sobre uma grade nacional de 17.766
-       células, tanto em resolução de nível de câmera (11 covariáveis) quanto de nível de array (6
-       covariáveis). Aborda se uma célula deveria sequer ser prevista &mdash; diagnósticos de
-       extrapolação MESS mais cinco biplots de pares de covariáveis mostrando onde os sítios
-       amostrados cobrem (ou não) o espaço nacional de covariáveis &mdash; a lógica de calculadora
-       de raster por trás de transformar coeficientes ajustados em uma superfície de probabilidade,
-       triagem de AUC/limiar de Youden por espécie em cada resolução, e um exemplo trabalhado
-       (Quati) mostrando como as predições em nível de câmera e de array podem divergir para a
-       mesma espécie no mesmo mapa.</p>
+    <p>Projeta o modelo de ocupação de <strong>comunidade</strong> ajustado em nível de câmera (44
+       espécies, pooling parcial sobre uma hiper-distribuição de toda a assembleia, 11 covariáveis)
+       sobre uma grade nacional de 17.766 células. Aborda se uma célula deveria sequer ser prevista
+       &mdash; diagnósticos de extrapolação MESS mais biplots de pares de covariáveis mostrando onde
+       os sítios amostrados cobrem (ou não) o espaço nacional de covariáveis &mdash; a lógica de
+       calculadora de raster por trás de transformar coeficientes ajustados em uma superfície de
+       probabilidade, triagem de AUC/limiar de Youden por espécie, mapas de presença/ausência para
+       as espécies bem suportadas, uma visão nacional de riqueza e ocupação total prevista,
+       estimativas de área ocupada por espécie, e um aprofundamento sobre a onça-pintada comparando
+       os coeficientes do modelo de comunidade com um ajuste independente de espécie única para
+       mostrar exatamente o que o pooling parcial muda.</p>
     <div class="dl-grid">
       <div class="dl-col">
         <h4>English</h4>
-        <a class="dl-btn" href="modules/module5/en/module5_prediction_mapping.html">
-          <span><span class="fmt">HTML</span> rendered report</span><span class="size">10.0 MB &middot; view</span>
+        <a class="dl-btn" href="modules/module5/en/module5_prediction_mapping_community.html">
+          <span><span class="fmt">HTML</span> rendered report</span><span class="size">13 MB &middot; view</span>
         </a>
-        <a class="dl-btn" href="modules/module5/en/module5_prediction_mapping.R" download>
-          <span><span class="fmt">R</span> script</span><span class="size">15 KB &middot; download</span>
+        <a class="dl-btn" href="modules/module5/en/module5_prediction_mapping_community.qmd" download>
+          <span><span class="fmt">QMD</span> Quarto source</span><span class="size">30 KB &middot; download</span>
         </a>
         <a class="dl-btn" href="modules/module5/en/module5_data.zip" download>
-          <span><span class="fmt">ZIP</span> input data</span><span class="size">1.4 MB &middot; download</span>
+          <span><span class="fmt">ZIP</span> input data</span><span class="size">5.4 MB &middot; download</span>
         </a>
       </div>
       <div class="dl-col">
         <h4>Português</h4>
-        <a class="dl-btn" href="modules/module5/pt/module5_prediction_mapping_pt.html">
-          <span><span class="fmt">HTML</span> relatório renderizado</span><span class="size">10.0 MB &middot; ver</span>
+        <a class="dl-btn" href="modules/module5/pt/module5_prediction_mapping_community_pt.html">
+          <span><span class="fmt">HTML</span> relatório renderizado</span><span class="size">13 MB &middot; ver</span>
         </a>
-        <a class="dl-btn" href="modules/module5/pt/module5_prediction_mapping_pt.R" download>
-          <span><span class="fmt">R</span> script</span><span class="size">15 KB &middot; baixar</span>
+        <a class="dl-btn" href="modules/module5/pt/module5_prediction_mapping_community_pt.qmd" download>
+          <span><span class="fmt">QMD</span> fonte Quarto</span><span class="size">34 KB &middot; baixar</span>
         </a>
         <a class="dl-btn" href="modules/module5/pt/module5_data.zip" download>
-          <span><span class="fmt">ZIP</span> dados de entrada</span><span class="size">1.4 MB &middot; baixar</span>
+          <span><span class="fmt">ZIP</span> dados de entrada</span><span class="size">5.4 MB &middot; baixar</span>
         </a>
       </div>
     </div>
     <details style="margin-top:1rem;">
-      <summary style="cursor:pointer; font-weight:600;">Figuras produzidas por este script (7)</summary>
+      <summary style="cursor:pointer; font-weight:600;">Figuras produzidas por este notebook (8)</summary>
       <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(220px,1fr)); gap:0.75rem; margin-top:0.75rem;">
         <img src="modules/module5/pt/figs/mess_extrapolation_11cov.png" alt="Devemos prever aqui? Diagnósticos de extrapolação (MESS + cobertura de covariáveis, modelo de 11 covariáveis)" loading="lazy" style="width:100%; border-radius:4px;">
-        <img src="modules/module5/pt/figs/worked_example_coati.png" alt="Mesma espécie, mesmas covariáveis, duas resoluções de modelo (Quati)" loading="lazy" style="width:100%; border-radius:4px;">
-        <img src="modules/module5/pt/figs/gallery_camera_highAUC.png" alt="Predições de ocupação em nível de câmera, modelos de alta qualidade (AUC >= 0,70)" loading="lazy" style="width:100%; border-radius:4px;">
-        <img src="modules/module5/pt/figs/gallery_camera_lowAUC.png" alt="Predições de ocupação em nível de câmera, modelos mais fracos (AUC < 0,70)" loading="lazy" style="width:100%; border-radius:4px;">
-        <img src="modules/module5/pt/figs/gallery_array_highAUC.png" alt="Predições de ocupação em nível de array, modelos de alta qualidade (AUC >= 0,70)" loading="lazy" style="width:100%; border-radius:4px;">
-        <img src="modules/module5/pt/figs/gallery_array_lowAUC.png" alt="Predições de ocupação em nível de array, modelos mais fracos (AUC < 0,70)" loading="lazy" style="width:100%; border-radius:4px;">
-        <img src="modules/module5/pt/figs/camera_vs_array_auc_11cov.png" alt="AUC em nível de câmera vs nível de array, por espécie" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module5/pt/figs/richness_and_presence_community_camera.png" alt="Riqueza de comunidade prevista no Brasil" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module5/pt/figs/detection_density_map.png" alt="Ocupação animal total prevista no Brasil" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module5/pt/figs/gallery_community_hiAUC_full.png" alt="Predições de ocupação do modelo de comunidade, espécies bem suportadas (AUC >= 0,70)" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module5/pt/figs/gallery_community_loAUC_full.png" alt="Predições de ocupação do modelo de comunidade, modelos mais fracos (AUC < 0,70)" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module5/pt/figs/rangemap_community_hiAUC_full.png" alt="Mapas de presença/ausência, espécies bem suportadas (AUC >= 0,70)" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module5/pt/figs/species_occupied_area_top15.png" alt="Área estimada ocupada no Brasil, 15 principais espécies" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module5/pt/figs/jaguar_deep_dive.png" alt="Ocupação da onça-pintada: modelo independente vs. modelo de comunidade com pooling parcial" loading="lazy" style="width:100%; border-radius:4px;">
       </div>
     </details>
   </section>
