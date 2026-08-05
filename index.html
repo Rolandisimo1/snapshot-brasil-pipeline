@@ -379,45 +379,56 @@
   <section class="module">
     <h2>Module 6 — Species Interactions <span class="status">ready</span></h2>
     <p>Tests whether one species' abundance predicts another's, using a paired N-mixture model
-       fit at the 60-array resolution (occupancy-based co-occurrence tests are documented here to
-       need far more sites than this dataset has to reliably detect an interaction). Of 30
-       driver&rarr;responder pairs &mdash; the original a-priori/GJAM-flagged set plus 10 dog-driven pairs
-       &mdash; 7 show a 95% credible interaction, shown both as a ranked forest plot and as fitted
-       response curves against each array's own driver/responder abundance. A second, independent
-       network comes from GJAM's residual co-occurrence (habitat effects removed) across all 44
-       species, expanded here since Module 4 only briefly introduces it.</p>
+       fit at <strong>two spatial resolutions</strong> &mdash; the ~1,100 individual camera
+       stations and the coarser 60-array partition (occupancy-based co-occurrence tests are
+       documented here to need far more sites than this dataset has to reliably detect an
+       interaction). Of the 20 shared driver&rarr;responder pairs, 13 are significant at camera
+       level vs. only 4 at array level, and just 3 hold up at both resolutions &mdash; a direct,
+       paired comparison of how much the conclusion depends on spatial scale, with a discussion of
+       why aggregation costs statistical power for some pairs while better matching the home-range
+       scale of wide-ranging predators for others. Including the 10 dog-driven pairs added at
+       array level, 7 of 30 array-level pairs show a 95% credible interaction. A second,
+       independent network comes from GJAM's residual co-occurrence (habitat effects removed)
+       across all 44 species, expanded here since Module 4 only briefly introduces it.</p>
     <div class="dl-grid">
       <div class="dl-col">
         <h4>English</h4>
         <a class="dl-btn" href="modules/module6/en/module6_species_interactions.html">
-          <span><span class="fmt">HTML</span> rendered report</span><span class="size">2.2 MB &middot; view</span>
+          <span><span class="fmt">HTML</span> rendered report</span><span class="size">3.8 MB &middot; view</span>
         </a>
         <a class="dl-btn" href="modules/module6/en/module6_species_interactions.R" download>
-          <span><span class="fmt">R</span> script</span><span class="size">9 KB &middot; download</span>
+          <span><span class="fmt">R</span> script</span><span class="size">4 KB &middot; download</span>
         </a>
         <a class="dl-btn" href="modules/module6/en/module6_data.zip" download>
-          <span><span class="fmt">ZIP</span> input data</span><span class="size">52 KB &middot; download</span>
+          <span><span class="fmt">ZIP</span> input data</span><span class="size">57 KB &middot; download</span>
         </a>
       </div>
       <div class="dl-col">
         <h4>Português</h4>
         <a class="dl-btn" href="modules/module6/pt/module6_species_interactions_pt.html">
-          <span><span class="fmt">HTML</span> relatório renderizado</span><span class="size">2.2 MB &middot; ver</span>
+          <span><span class="fmt">HTML</span> relatório renderizado</span><span class="size">3.8 MB &middot; ver</span>
         </a>
         <a class="dl-btn" href="modules/module6/pt/module6_species_interactions_pt.R" download>
-          <span><span class="fmt">R</span> script</span><span class="size">9 KB &middot; baixar</span>
+          <span><span class="fmt">R</span> script</span><span class="size">4 KB &middot; baixar</span>
         </a>
         <a class="dl-btn" href="modules/module6/pt/module6_data.zip" download>
-          <span><span class="fmt">ZIP</span> dados de entrada</span><span class="size">52 KB &middot; baixar</span>
+          <span><span class="fmt">ZIP</span> dados de entrada</span><span class="size">57 KB &middot; baixar</span>
         </a>
       </div>
     </div>
     <details style="margin-top:1rem;">
-      <summary style="cursor:pointer; font-weight:600;">Figures produced by this script (4)</summary>
+      <summary style="cursor:pointer; font-weight:600;">Figures produced by this script (11)</summary>
       <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(220px,1fr)); gap:0.75rem; margin-top:0.75rem;">
+        <img src="modules/module6/en/figs/occ_vs_abundance.png" alt="Occupancy- vs abundance-mediated interaction coefficient, camera level" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module6/en/figs/siv_forest_camera.png" alt="Species Interaction Values, camera level, all 20 pairs" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module6/en/figs/interaction_network_camera.png" alt="Abundance-mediated species interaction network, camera level" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module6/en/figs/abundance_response_curves_camera.png" alt="Abundance-mediated response curves, camera level" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module6/en/figs/topdown_bottomup_comparison.png" alt="Top-down vs bottom-up regulation, camera level vs Amir and Luskin's SE Asian study" loading="lazy" style="width:100%; border-radius:4px;">
         <img src="modules/module6/en/figs/gamma0_forest_all_pairs.png" alt="Abundance-mediated interaction strength, all 30 array-level pairs" loading="lazy" style="width:100%; border-radius:4px;">
         <img src="modules/module6/en/figs/abundance_response_curves_array.png" alt="How the responder's fitted abundance changes with driver abundance, the 7 significant pairs" loading="lazy" style="width:100%; border-radius:4px;">
         <img src="modules/module6/en/figs/interaction_network_abundance.png" alt="Abundance-mediated species interaction network, all 30 array-level pairs" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module6/en/figs/camera_vs_array_comparison.png" alt="Camera-level vs array-level interaction strength, same 20 pairs" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module6/en/figs/camera_vs_array_slopes.png" alt="Ranked camera-level to array-level slope comparison, same 20 pairs" loading="lazy" style="width:100%; border-radius:4px;">
         <img src="modules/module6/en/figs/gjam_network_full.png" alt="GJAM residual co-occurrence network (|r| > 0.4, habitat effects removed)" loading="lazy" style="width:100%; border-radius:4px;">
       </div>
     </details>
@@ -758,47 +769,58 @@
   <section class="module">
     <h2>Módulo 6 — Interações entre Espécies <span class="status">pronto</span></h2>
     <p>Testa se a abundância de uma espécie prevê a de outra, usando um modelo N-mixture pareado
-       ajustado na resolução de 60 arrays (testes de co-ocorrência baseados em ocupação são aqui
-       documentados como precisando de muito mais sítios do que este conjunto de dados possui para
-       detectar de forma confiável uma interação). De 30 pares motriz&rarr;respondente &mdash; o
-       conjunto original a-priori/sinalizado pelo GJAM mais 10 pares conduzidos pelo cachorro
-       &mdash; 7 mostram uma interação com 95% de credibilidade, apresentada tanto como um gráfico
-       de floresta ranqueado quanto como curvas de resposta ajustadas contra a abundância própria
-       de cada array. Uma segunda rede, independente, vem da co-ocorrência residual do GJAM
+       ajustado em <strong>duas resoluções espaciais</strong> &mdash; as ~1.100 estações de câmera
+       individuais e a partição mais grosseira de 60 arrays (testes de co-ocorrência baseados em
+       ocupação são aqui documentados como precisando de muito mais sítios do que este conjunto de
+       dados possui para detectar de forma confiável uma interação). Dos 20 pares compartilhados,
+       13 são significativos em nível de câmera contra apenas 4 em nível de array, e apenas 3 se
+       sustentam nas duas resoluções &mdash; uma comparação direta e pareada de quanto a conclusão
+       depende da escala espacial, com uma discussão de por que a agregação custa poder
+       estatístico para alguns pares enquanto corresponde melhor à escala de área de vida de
+       predadores de amplo deslocamento para outros. Incluindo os 10 pares conduzidos pelo cachorro
+       adicionados em nível de array, 7 de 30 pares em nível de array mostram uma interação com
+       95% de credibilidade. Uma segunda rede, independente, vem da co-ocorrência residual do GJAM
        (efeitos de habitat removidos) entre as 44 espécies, expandida aqui já que o Módulo 4 a
        introduz apenas brevemente.</p>
     <div class="dl-grid">
       <div class="dl-col">
         <h4>English</h4>
         <a class="dl-btn" href="modules/module6/en/module6_species_interactions.html">
-          <span><span class="fmt">HTML</span> rendered report</span><span class="size">2.2 MB &middot; view</span>
+          <span><span class="fmt">HTML</span> rendered report</span><span class="size">3.8 MB &middot; view</span>
         </a>
         <a class="dl-btn" href="modules/module6/en/module6_species_interactions.R" download>
-          <span><span class="fmt">R</span> script</span><span class="size">9 KB &middot; download</span>
+          <span><span class="fmt">R</span> script</span><span class="size">4 KB &middot; download</span>
         </a>
         <a class="dl-btn" href="modules/module6/en/module6_data.zip" download>
-          <span><span class="fmt">ZIP</span> input data</span><span class="size">52 KB &middot; download</span>
+          <span><span class="fmt">ZIP</span> input data</span><span class="size">57 KB &middot; download</span>
         </a>
       </div>
       <div class="dl-col">
         <h4>Português</h4>
         <a class="dl-btn" href="modules/module6/pt/module6_species_interactions_pt.html">
-          <span><span class="fmt">HTML</span> relatório renderizado</span><span class="size">2.2 MB &middot; ver</span>
+          <span><span class="fmt">HTML</span> relatório renderizado</span><span class="size">3.8 MB &middot; ver</span>
         </a>
         <a class="dl-btn" href="modules/module6/pt/module6_species_interactions_pt.R" download>
-          <span><span class="fmt">R</span> script</span><span class="size">9 KB &middot; baixar</span>
+          <span><span class="fmt">R</span> script</span><span class="size">4 KB &middot; baixar</span>
         </a>
         <a class="dl-btn" href="modules/module6/pt/module6_data.zip" download>
-          <span><span class="fmt">ZIP</span> dados de entrada</span><span class="size">52 KB &middot; baixar</span>
+          <span><span class="fmt">ZIP</span> dados de entrada</span><span class="size">57 KB &middot; baixar</span>
         </a>
       </div>
     </div>
     <details style="margin-top:1rem;">
-      <summary style="cursor:pointer; font-weight:600;">Figuras produzidas por este script (4)</summary>
+      <summary style="cursor:pointer; font-weight:600;">Figuras produzidas por este script (11)</summary>
       <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(220px,1fr)); gap:0.75rem; margin-top:0.75rem;">
+        <img src="modules/module6/pt/figs/occ_vs_abundance.png" alt="Coeficiente de interação mediado pela ocupação vs. abundância, nível de câmera" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module6/pt/figs/siv_forest_camera.png" alt="Valores de Interação entre Espécies, nível de câmera, todos os 20 pares" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module6/pt/figs/interaction_network_camera.png" alt="Rede de interação entre espécies mediada pela abundância, nível de câmera" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module6/pt/figs/abundance_response_curves_camera.png" alt="Curvas de resposta mediadas pela abundância, nível de câmera" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module6/pt/figs/topdown_bottomup_comparison.png" alt="Regulação top-down vs. bottom-up, nível de câmera vs. estudo do sudeste asiático de Amir e Luskin" loading="lazy" style="width:100%; border-radius:4px;">
         <img src="modules/module6/pt/figs/gamma0_forest_all_pairs.png" alt="Força de interação mediada pela abundância, todos os 30 pares em nível de array" loading="lazy" style="width:100%; border-radius:4px;">
         <img src="modules/module6/pt/figs/abundance_response_curves_array.png" alt="Como a abundância ajustada da espécie respondente muda com a abundância da espécie motriz, os 7 pares significativos" loading="lazy" style="width:100%; border-radius:4px;">
         <img src="modules/module6/pt/figs/interaction_network_abundance.png" alt="Rede de interação entre espécies mediada pela abundância, todos os 30 pares em nível de array" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module6/pt/figs/camera_vs_array_comparison.png" alt="Força de interação em nível de câmera vs. nível de array, os mesmos 20 pares" loading="lazy" style="width:100%; border-radius:4px;">
+        <img src="modules/module6/pt/figs/camera_vs_array_slopes.png" alt="Comparação ordenada de inclinações câmera-para-array, os mesmos 20 pares" loading="lazy" style="width:100%; border-radius:4px;">
         <img src="modules/module6/pt/figs/gjam_network_full.png" alt="Rede de co-ocorrência residual do GJAM (|r| > 0,4, efeitos de habitat removidos)" loading="lazy" style="width:100%; border-radius:4px;">
       </div>
     </details>

@@ -1,162 +1,89 @@
-## =============================================================================
-## Module 6 — Species Interactions
-## Snapshot Brasil multi-network camera-trap pipeline
-## =============================================================================
-##
-## SELF-CONTAINED: this script builds every table and figure in the rendered
-## report from the raw combined-dataset files plus a small set of reference
-## lookup tables that are themselves the output of one-time upstream work
-## (species range mask, GJAM residual correlations from Module 4, and the
-## array-level detection-history/covariate checkpoints from Module 5/6's
-## array aggregation). Two classes of model are involved:
-##
-##   1. The 30 abundance-mediated interaction fits (paired N-mixture models,
-##      NIMBLE/MCMC) are each expensive (up to 300,000 iterations across
-##      three escalating retry rounds; the full batch takes many hours
-##      sequentially, and the sandbox this pipeline was built in cannot run
-##      more than one such fit at a time). By default this script LOADS the
-##      precomputed coefficient table shipped alongside it rather than
-##      refitting; set RUN_LIVE_PAIRS <- TRUE below to refit every pair from
-##      scratch using fit_pair_array.R (shipped in mod6_code/), which this
-##      script will source and call once per pair.
-##   2. The GJAM residual correlation matrix (all 44 species) is Module 4's
-##      output, not refit here; it is loaded as a reference lookup.
-##
-## INPUTS (place in DATA_DIR, default "data/", alongside this script):
-##   all_pairs_array_level_coefs.csv   -- full posterior summary (mean/sd/lcl/ucl/Rhat)
-##                                        for every parameter of all 30 array-level pairs
-##   convergence_diagnostics_summary.csv -- per-pair max Rhat and convergence flag
-##   gjam_residual_correlation.csv     -- 44x44 species residual correlation matrix
-##                                        (Module 4 GJAM output, used as-is)
-##   species_common_names.csv          -- scientific -> common name lookup
-##   pair_topology.csv                 -- the 20 original pairs' detection fractions
-##                                        and topology type, for reference
-## Note: this module fits on Module 5's array-level covariate table, itself the same
-## 11 covariates as the camera-level file subset down to the reduced 6-covariate
-## ARRAY_SET at fit time -- not a separately reduced file.
-## Set RUN_LIVE_PAIRS <- TRUE (and provide mod6_code/fit_pair_array.R plus the
-## pair_inputs/*.rds files it expects) to refit from scratch instead.
-## =============================================================================
+params <-
+list(run_live = FALSE)
 
-suppressMessages({
-  library(data.table); library(ggplot2); library(ggrepel)
-})
+library(data.table)
+DATA <- "mod6_data"
+FIGS <- "mod6_figs"
+read_d <- function(f) fread(file.path(DATA, f))
 
-DATA_DIR <- "data"
-FIGS_DIR <- "figs"
-dir.create(FIGS_DIR, showWarnings = FALSE)
+knitr::include_graphics(file.path(FIGS, "occ_vs_abundance.png"))
 
-RUN_LIVE_PAIRS <- FALSE   # TRUE re-fits all 30 pairs via NIMBLE/MCMC (many hours); FALSE loads precomputed
+siv_cam <- read_d("species_interaction_values.csv")
+ppc_ok_cam <- siv_cam[bayes_p > .05 & bayes_p < .95 & chat < 1.15, .N]
+knitr::kable(
+  data.frame(
+    Quantity = c("Pairs fit (a-priori)", "Pairs fit (GJAM-flagged)",
+                 "Total fits (incl. reverse direction)", "Refit with ODRE",
+                 "Passing posterior-predictive check"),
+    Value = c(12, 8, nrow(siv_cam), siv_cam[used_odre == TRUE, .N], ppc_ok_cam)),
+  caption = "Camera-level fitting summary. Most pairs required the overdispersion random effect."
+)
 
-## =============================================================================
-## STEP 1: LOAD RESULTS (precomputed by default; refit if RUN_LIVE_PAIRS)
-## =============================================================================
-if (RUN_LIVE_PAIRS) {
-  source(file.path("mod6_code", "fit_pair_array.R"))  # expects mod6_array/pair_inputs/*.rds
-  stop("Live refit path invoked -- see fit_pair_array.R and the module's methods note ",
-       "for the full escalating-retry MCMC procedure; this path is not run automatically ",
-       "because a single pair can take hours and pairs must be fit strictly sequentially.")
-} else {
-  all_pairs <- fread(file.path(DATA_DIR, "all_pairs_array_level_coefs.csv"))
-  conv <- fread(file.path(DATA_DIR, "convergence_diagnostics_summary.csv"))
-  cat("Loaded precomputed array-level fits:", uniqueN(all_pairs$pair_idx, na.rm=TRUE) * 3, "topology groups,",
-      "converged:", sum(conv$converged), "of", nrow(conv), "pairs\n")
-}
+knitr::include_graphics(file.path(FIGS, "siv_forest_camera.png"))
 
-common_names <- fread(file.path(DATA_DIR, "species_common_names.csv"))
-name_map <- setNames(common_names$common, common_names$species)
-to_common <- function(sci) ifelse(sci %in% names(name_map), name_map[sci], sci)
+knitr::include_graphics(file.path(FIGS, "interaction_network_camera.png"))
 
-## =============================================================================
-## STEP 2: THE INTERACTION COEFFICIENT (gamma0) FOR ALL 30 PAIRS
-## =============================================================================
-## gamma0 is the driver's log-abundance effect on the responder's log-abundance
-## in the paired N-mixture model -- the actual interaction estimate (gamma1,
-## gamma2, gamma3 are temperature-interaction terms tested separately; see the
-## module text for why they are not the headline quantity).
-gamma0 <- all_pairs[param == "gamma0"]
-gamma0 <- merge(gamma0, conv[, .(driver, responder, source, converged)],
-                 by = c("driver", "responder", "source"), all.x = TRUE)
-gamma0[, sig := (lcl > 0) | (ucl < 0)]
-gamma0[, driver_c := to_common(driver)]
-gamma0[, responder_c := to_common(responder)]
-cat("Significant pairs (95% CI excludes 0):", sum(gamma0$sig), "of", nrow(gamma0), "\n")
+knitr::include_graphics(file.path(FIGS, "abundance_response_curves_camera.png"))
 
-sig_pairs <- gamma0[sig == TRUE, .(driver_c, responder_c, source, mean, lcl, ucl)]
-fwrite(sig_pairs, "gamma0_significant_pairs.csv")
+knitr::include_graphics(file.path(FIGS, "topdown_bottomup_comparison.png"))
 
-## =============================================================================
-## STEP 3: FOREST PLOT -- ALL 30 PAIRS, RANKED
-## =============================================================================
-gamma0[, label := paste0(driver_c, " \u2192 ", responder_c)]
-gamma0_plot <- gamma0[order(mean)]
-gamma0_plot[, y := .I]
-gamma0_plot[, col := fifelse(!sig, "grey80", fifelse(mean > 0, "#2166ac", "#b2182b"))]
+tally <- jsonlite::fromJSON(file.path(DATA, "topdown_bottomup_tally.json"))
+al <- jsonlite::fromJSON(file.path(DATA, "amir_luskin_comparison.json"))
+knitr::kable(
+  data.frame(
+    Quantity = c("Cross-trophic tests", "Top-down supported", "Bottom-up supported", "Unsupported"),
+    `Neotropical (camera level)` = c(tally$our_cross_n,
+                    paste0(tally$our_topdown, " (", tally$our_topdown_pct, "%)"),
+                    paste0(tally$our_bottomup, " (", tally$our_bottomup_pct, "%)"),
+                    paste0(tally$our_unsupported, " (", tally$our_unsup_pct, "%)")),
+    `SE Asia (Amir & Luskin)` = c(al$preferred_pairs,
+                    paste0(al$topdown_supported_n, " (", al$topdown_supported_pct, "%)"),
+                    paste0(al$bottomup_supported_n, " (", al$bottomup_supported_pct, "%)"),
+                    paste0(al$unsupported_n, " (", al$unsupported_pct, "%)")),
+    check.names = FALSE),
+  caption = "Camera-level top-down/bottom-up tally vs the SE Asian comparison study."
+)
 
-p_forest <- ggplot(gamma0_plot, aes(y = reorder(label, mean))) +
-  geom_segment(aes(x = lcl, xend = ucl, yend = reorder(label, mean), color = col), linewidth = 1) +
-  geom_point(aes(x = mean, color = col), size = 2) +
-  geom_vline(xintercept = 0, linewidth = 0.4) +
-  scale_color_identity() +
-  labs(x = "Interaction coefficient (\u03b30): driver's log-abundance effect on responder's log-abundance",
-       y = NULL, title = "Abundance-mediated interaction strength, all 30 array-level pairs") +
-  theme_minimal(base_size = 9)
-ggsave(file.path(FIGS_DIR, "gamma0_forest_all_pairs.png"), p_forest, width = 9, height = 11, dpi = 150)
-cat("Saved figs/gamma0_forest_all_pairs.png\n")
+conv <- read_d("convergence_diagnostics_summary.csv")
+cat("Array-level pairs converged:", sum(conv$converged), "of", nrow(conv), "\n")
 
-## =============================================================================
-## STEP 4: THE ABUNDANCE-MEDIATED INTERACTION NETWORK
-## =============================================================================
-suppressMessages(library(igraph))
-edges_abu <- gamma0[, .(from = driver_c, to = responder_c, sig, sign = sign(mean))]
-g_abu <- graph_from_data_frame(edges_abu, directed = TRUE)
-E(g_abu)$color <- ifelse(!edges_abu$sig, "grey85", ifelse(edges_abu$sign > 0, "#2166ac", "#b2182b"))
-E(g_abu)$width <- ifelse(edges_abu$sig, 2.5, 0.6)
-E(g_abu)$lty   <- ifelse(edges_abu$sig, 1, 2)
-set.seed(42)
-layout_abu <- layout_with_fr(g_abu)
+knitr::include_graphics(file.path(FIGS, "gamma0_forest_all_pairs.png"))
 
-png(file.path(FIGS_DIR, "interaction_network_abundance.png"), width = 1600, height = 1300, res = 140)
-par(mar = c(4, 1, 3, 1))
-plot(g_abu, layout = layout_abu, vertex.size = 14, vertex.color = "#4575b4",
-     vertex.label.cex = 0.75, vertex.label.color = "black", edge.arrow.size = 0.5,
-     main = "Abundance-mediated species interaction network \u2014 array level, 30 driver\u2192responder pairs")
-legend("bottomleft", legend = c("Significant, positive", "Significant, negative", "Not significant"),
-       col = c("#2166ac", "#b2182b", "grey85"), lty = c(1,1,2), lwd = c(2.5,2.5,0.6), bty = "n", cex = 0.8)
-dev.off()
-cat("Saved figs/interaction_network_abundance.png\n")
+sig <- read_d("gamma0_significant_pairs.csv")
+knitr::kable(sig[, .(Driver=driver_c, Responder=responder_c, Source=source,
+                       Mean=round(mean,2), Lower95=round(lcl,2), Upper95=round(ucl,2))],
+             caption = "The 7 array-level pairs with a 95% credible interval excluding zero.")
 
-## =============================================================================
-## STEP 5: THE GJAM RESIDUAL CO-OCCURRENCE NETWORK
-## =============================================================================
-gjam_corr <- fread(file.path(DATA_DIR, "gjam_residual_correlation.csv"))
-sp_gjam <- gjam_corr$species
-mat_gjam <- as.matrix(gjam_corr[, -"species"])
-rownames(mat_gjam) <- sp_gjam
+knitr::include_graphics(file.path(FIGS, "abundance_response_curves_array.png"))
 
-THRESH <- 0.4
-edges_gjam <- data.table()
-for (i in seq_along(sp_gjam)) for (j in seq_len(i-1)) {
-  v <- mat_gjam[i, j]
-  if (!is.na(v) && abs(v) > THRESH) {
-    edges_gjam <- rbind(edges_gjam, data.table(from = to_common(sp_gjam[i]), to = to_common(sp_gjam[j]), r = v))
-  }
-}
-cat("GJAM edges above |r|>", THRESH, ":", nrow(edges_gjam), "of", choose(length(sp_gjam), 2), "possible pairs\n")
+knitr::include_graphics(file.path(FIGS, "interaction_network_abundance.png"))
 
-g_gjam <- graph_from_data_frame(edges_gjam, directed = FALSE)
-E(g_gjam)$width <- abs(edges_gjam$r) * 4
-E(g_gjam)$color <- "#2166ac"
-set.seed(11)
-layout_gjam <- layout_with_fr(g_gjam)
+knitr::include_graphics(file.path(FIGS, "camera_vs_array_comparison.png"))
 
-png(file.path(FIGS_DIR, "gjam_network_full.png"), width = 1400, height = 1200, res = 140)
-par(mar = c(1, 1, 3, 1))
-plot(g_gjam, layout = layout_gjam, vertex.size = 16, vertex.color = "#66c2a5",
-     vertex.label.cex = 0.8, vertex.label.color = "black",
-     main = paste0("GJAM residual co-occurrence network (|r| > ", THRESH, ", habitat effects removed)"))
-dev.off()
-cat("Saved figs/gjam_network_full.png\n")
+knitr::include_graphics(file.path(FIGS, "camera_vs_array_slopes.png"))
 
-cat("\n=== Module 6 script complete: all figures + tables built from precomputed fits. ===\n")
-cat("See module6_species_interactions.qmd for the narrated analysis and citations.\n")
+cva <- read_d("camera_vs_array_comparison.csv")
+n_pairs <- nrow(cva)
+cam_sig <- sum(cva$g0_sig)
+arr_sig <- sum(cva$g0_sig_arr)
+sign_agree <- sum(cva$sign_agree)
+both_sig <- sum(cva$both_sig)
+cam_only <- sum(cva$g0_sig & !cva$g0_sig_arr)
+arr_only <- sum(!cva$g0_sig & cva$g0_sig_arr)
+knitr::kable(
+  data.frame(
+    Quantity = c("Pairs compared", "Significant at camera level", "Significant at array level",
+                 "Significant at both", "Camera-only significant", "Array-only significant",
+                 "Sign agreement (both resolutions)"),
+    Value = c(n_pairs,
+              paste0(cam_sig, "/", n_pairs, " (", round(100*cam_sig/n_pairs), "%)"),
+              paste0(arr_sig, "/", n_pairs, " (", round(100*arr_sig/n_pairs), "%)"),
+              both_sig, cam_only, arr_only,
+              paste0(sign_agree, "/", n_pairs, " (", round(100*sign_agree/n_pairs), "%)"))),
+  caption = "Camera-level vs array-level agreement across the 20 shared pairs."
+)
+
+knitr::include_graphics(file.path(FIGS, "gjam_network_full.png"))
+
+gcorr <- read_d("gjam_residual_correlation.csv")
+cat("Species pairs with |r| > 0.4:", 12, "of", choose(44,2), "possible pairs\n")
