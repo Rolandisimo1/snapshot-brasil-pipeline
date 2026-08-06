@@ -13,6 +13,11 @@ page via a language toggle.
 ## Contents
 
 - `index.html` — bilingual landing page linking every module and dataset.
+- `wildlife_id_dashboard.html` — tabbed species identification dashboard
+  (Agoutis, Didelphis, Deer, Armadillos): Brazil range maps (SALVE/ICMBio),
+  iNaturalist occurrence records, and camera-trap arrays by species, with a
+  click/lat-lon lookup for candidate species at any location. Self-contained,
+  no build step. Linked from the landing page's second call-to-action button.
 - `modules/module1/` — Foundation & Detection Histories (`en/`, `pt/`: HTML
   report + annotated R script each).
 - `modules/module2/` — Covariates, Sampling & Protected Areas (`en/`, `pt/`:
