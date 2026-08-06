@@ -34,3 +34,5 @@ and will be added once finalized.
 Each module ships as a rendered HTML report (open directly, no setup needed)
 and a standalone, heavily-annotated R script (`Rscript module<N>_<name>.R`
 from inside that module's folder, with `data.table` and `ggplot2` installed).
+
+<!-- redeploy trigger: 2026-08-06T14:05:47Z -->
